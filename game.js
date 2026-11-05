@@ -81,6 +81,7 @@ const actions = {
     cat.hunger = down(cat.hunger, 20);
     cat.happiness = up(cat.happiness, 15);
     cat.energy = up(cat.energy, 5);
+    cat.cleanliness = down(cat.cleanliness, 5); // a bit of food in the fur
     cat.message = cat.name + " enjoyed " + pronoun().possessive + " food!";
   },
   play() {
@@ -88,7 +89,7 @@ const actions = {
     cat.happiness = up(cat.happiness, 15);
     cat.energy = down(cat.energy, 5);
     cat.hunger = up(cat.hunger, 5);
-    cat.cleanliness = down(cat.cleanliness, 10);
+    cat.cleanliness = down(cat.cleanliness, 15); // rolling around gets the fur messy
     cat.message = cat.name + " is playing with " + pronoun().possessive + " ball!";
   },
   sleep() {
