@@ -1,0 +1,50 @@
+body {
+background: #E3C3C6
+font-family:'Courier', monospace;
+font-smooth: never;
+-webkit-font-smoothing : none;
+text-align: center;
+padding: 40px;
+}
+.game {
+background: #C3E3D0;
+max-width: 400px;
+margin: auto;
+padding: 30px;
+border-radius: 20px;
+box-shadow:0 4px 15px #0002;
+}
+h1 {
+color: #87634c;
+}
+.bar {
+background:#eee;
+height: 15px;
+border-radius: 20px;
+overflow: hidden;
+margin-bottom: 20px;
+}
+.hunger {
+background:#d69a43;
+height:100%
+}
+.happy {
+background:#329b72;
+height: 100%;
+}
+button {
+background: #b58b70;
+color: white;
+border:none;
+padding:12px;
+margin:5px;
+border-radius:10px;
+cursor:pointer;
+}
+button:hover {
+background #87634c;
+}
+.message {
+color:#87634c;
+font-weight:bold;
+}

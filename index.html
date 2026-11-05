@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cat Game</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="game">
+
+  <!-- Shown while the cat still has lives -->
+  <section id="playing-view">
+    <h1 id="cat-name">Cat</h1>
+    <p>Age: <span id="cat-age">0</span></p>
+
+    <h3>Mood: <span id="mood"></span></h3>
+    <h3 id="emoji"></h3>
+
+    <h3>Hunger: <span id="hunger-value"></span>%</h3>
+    <div class="bar"><div class="hunger" id="hunger-bar"></div></div>
+
+    <h3>Happiness: <span id="happiness-value"></span>%</h3>
+    <div class="bar"><div class="happy" id="happiness-bar"></div></div>
+
+    <h3>Energy: <span id="energy-value"></span>%</h3>
+    <div class="bar"><div class="energy" id="energy-bar"></div></div>
+
+    <p class="message" id="message"></p>
+
+    <h3>Lives: <span id="lives-value"></span></h3>
+    <p id="hearts"></p>
+
+    <img id="cat-image" src="neutral-happy-hungry.png" alt="Cat">
+
+    <div class="actions">
+      <button data-action="feed">Feed <span class="name"></span></button>
+      <button data-action="play">Play with <span class="name"></span></button>
+      <button data-action="sleep">Sleep</button>
+      <button data-action="meow">Meow</button>
+      <button data-action="reset">Reset</button>
+    </div>
+  </section>
+
+  <!-- Shown when the cat has run out of lives -->
+  <section id="game-over-view" hidden>
+    <h1 class="game-over">GAME OVER</h1>
+    <h2>💔️ <span class="name"></span> ran out of lives 💔️</h2>
+    <button data-action="reset">Restart Game</button>
+  </section>
+
+  <h2>Cat Settings</h2>
+  <form id="settings-form">
+    <label for="name-input">Cat's name:</label>
+    <input type="text" id="name-input" maxlength="30" required>
+    <label for="age-input">Cat's age</label>
+    <input type="number" id="age-input" min="0" max="30" required>
+    <br><br>
+    <button type="submit">Save Settings</button>
+  </form>
+
+</div>
+<script src="game.js"></script>
+</body>
+</html>

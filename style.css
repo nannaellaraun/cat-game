@@ -1,75 +1,66 @@
 body {
-background: #E3C3C6
-font-family:'Courier', monospace;
-font-smooth: never;
--webkit-font-smoothing : none;
-text-align: center;
-padding: 40px;
+  background: #E3C3C6;
+  font-family: 'Courier', monospace;
+  font-smooth: never;
+  -webkit-font-smoothing: none;
+  text-align: center;
+  padding: 40px 16px;
 }
 .game {
-background: #C3E3D0;
-max-width: 400px;
-margin: auto;
-padding: 30px;
-border-radius: 20px;
-box-shadow:0 4px 15px #0002;
+  background: #C3E3D0;
+  max-width: 400px;
+  margin: auto;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px #0002;
 }
 h1 {
-color: #87634c;
+  color: #87634c;
 }
 .bar {
-background:#eee;
-height: 15px;
-border-radius: 20px;
-overflow: hidden;
-margin-bottom: 20px;
+  background: #eee;
+  height: 15px;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 20px;
 }
 .hunger {
-background:#d69a43;
-height:100%
+  background: #d69a43;
+  height: 100%;
 }
 .happy {
-background:#329b72;
-height: 100%;
-}
-button {
-background: #b58b70;
-color: white;
-border:none;
-padding:12px;
-margin:5px;
-border-radius:10px;
-cursor:pointer;
-}
-button:hover {
-background #87634c;
-}
-.message {
-color:#87634c;
-font-weight:bold;
+  background: #329b72;
+  height: 100%;
 }
 .energy {
-background:#4A8AA1;
-height: 100%;
+  background: #4A8AA1;
+  height: 100%;
+}
+.bar > div {
+  transition: width 0.3s;
+}
+img {
+  max-width: 100%;
 }
 button {
-background: #b58b70;
-color: white;
-border:none;
-padding:12px;
-margin:5px;
-border-radius:10px;
-cursor:pointer;
+  background: #b58b70;
+  color: white;
+  border: none;
+  padding: 12px;
+  margin: 5px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
 }
 button:hover {
-background #87634c;
+  background: #87634c;
 }
 .message {
-color:#87634c;
-font-weight:bold;
+  color: #87634c;
+  font-weight: bold;
 }
 .game-over {
   color: #b83232;
   font-size: 30px;
   font-weight: bold;
-  }
+}
