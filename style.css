@@ -165,3 +165,49 @@ button:hover {
     transform: translateY(110vh) rotate(540deg);
   }
 }
+
+/* Settings checkbox: a normal-sized box instead of a full-width field */
+.setting input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  accent-color: #b58b70;
+}
+
+/* The cat gently breathes */
+#cat-image {
+  image-rendering: pixelated;
+  transform-origin: bottom center;
+  animation: breathe 3s ease-in-out infinite;
+}
+@keyframes breathe {
+  50% {
+    transform: scaleY(1.02);
+  }
+}
+
+/* Red flash when the cat scratches */
+.scratch-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: rgba(220, 30, 30, 0.35);
+  animation: scratch-flash 0.7s ease-in-out forwards;
+}
+@keyframes scratch-flash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #cat-image {
+    animation: none;
+  }
+}

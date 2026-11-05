@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cat Game</title>
 <!-- Bump ?v= on every update so browsers load the new files, not an old saved copy -->
-<link rel="stylesheet" href="style.css?v=20261105-2">
+<link rel="stylesheet" href="style.css?v=20261105-3">
 </head>
 <body>
 <div class="game">
@@ -42,6 +42,7 @@
       <button data-action="feed">Feed <span class="name"></span></button>
       <button data-action="play">Play with <span class="name"></span></button>
       <button data-action="pet">Pet <span class="name"></span></button>
+      <button data-action="bellyRub">Belly rub</button>
       <button data-action="brush">Brush <span class="name"></span></button>
       <button data-action="sleep">Sleep</button>
       <button data-action="meow">Meow</button>
@@ -89,13 +90,21 @@
         <label for="eyes-input">Eye color:</label>
         <select id="eyes-input"></select>
       </div>
+      <div class="setting">
+        <label for="personality-input">Personality:</label>
+        <select id="personality-input"></select>
+      </div>
+      <div class="setting">
+        <label for="flash-input">Red flash when scratched:</label>
+        <input type="checkbox" id="flash-input">
+      </div>
       <p id="settings-error" class="message"></p>
       <button type="submit">Save Settings</button>
     </form>
   </dialog>
 
 </div>
-<script src="sprites.js?v=20261105-2"></script>
-<script src="game.js?v=20261105-2"></script>
+<script src="sprites.js?v=20261105-3"></script>
+<script src="game.js?v=20261105-3"></script>
 </body>
 </html>

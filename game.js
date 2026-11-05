@@ -13,11 +13,72 @@ const PRONOUNS = {
   none: { subject: "they", object: "them", possessive: "their", possessivePronoun: "theirs" },
 };
 
-const PETS_BEFORE_ANGRY = 5; // the 6th pet in a row annoys the cat
-const CALM_DOWN_MS = 10 * 1000; // an angry cat calms down after 10 seconds of no petting
+const CALM_DOWN_MS = 10 * 1000; // an angry or scratching cat calms down after 10 seconds
 const BIRTHDAY_MS = 7 * 24 * 60 * 60 * 1000; // the cat has a birthday every 7 days
 const MAX_AGE = 30; // same limit as Cat Settings
 const MESSY_AT = 30; // at this cleanliness or lower the cat looks messy
+
+// ---------- Personalities ----------
+
+// How a Default cat behaves. Each personality changes only some of these.
+const DEFAULT_TRAITS = {
+  petsBeforeAngry: 5, // the next pet in a row annoys the cat
+  angryCost: 15, // happiness lost when annoyed by petting
+  hungryCost: 15, // happiness lost per action while very hungry
+  playJoy: 15, // happiness from playing
+  playTiredness: 5, // energy used by playing
+  feedJoy: 15, // happiness from food
+  feedEnergy: 5, // energy from food
+  joyBonus: 0, // extra happiness from every action
+  timeHunger: 2, // hunger gained as time passes
+  timeHappiness: 2, // happiness lost as time passes
+  timeEnergy: 2, // energy lost as time passes
+  timeDirt: 2, // cleanliness lost as time passes
+  mess: 1, // how much eating and playing dirty the fur (1 = normal)
+  staysInMiddle: false, // happiness drifts back toward 50
+  bellyScratchChance: 0.3, // chance of a scratch from a belly rub
+  brushScratchChance: 0, // chance of a scratch from brushing
+};
+
+const PERSONALITIES = {
+  default: { label: "Default" },
+  neurotic: {
+    label: "Neurotic",
+    staysInMiddle: true,
+    hungryCost: 25,
+    petsBeforeAngry: 4,
+    angryCost: 25,
+    bellyScratchChance: 0.45,
+  },
+  extraverted: {
+    label: "Extraverted",
+    playJoy: 25,
+    playTiredness: 2,
+    feedJoy: 20,
+    feedEnergy: 10,
+    joyBonus: 3,
+    timeHappiness: 3, // needs more playing
+    timeEnergy: 1, // energy stays high
+    bellyScratchChance: 0.2,
+  },
+  bossy: {
+    label: "Bossy",
+    petsBeforeAngry: 2,
+    playJoy: 8,
+    bellyScratchChance: 0.6,
+    brushScratchChance: 0.25,
+  },
+  agreeable: {
+    label: "Agreeable",
+    timeHunger: 1,
+    timeDirt: 1,
+    mess: 0.5,
+    bellyScratchChance: 0.1,
+  },
+};
+
+// The rules for this cat's personality.
+const traits = () => ({ ...DEFAULT_TRAITS, ...PERSONALITIES[cat.personality] });
 
 // ---------- State ----------
 
@@ -43,6 +104,8 @@ function loadState() {
     color: "orange",
     coat: "solid",
     eyes: "black",
+    personality: "default",
+    flash: true, // red flash when the cat scratches
     lastBirthday: Date.now(), // the next birthday is 7 days after this
     partyUntil: 0, // the party hat is worn until this time (end of the birthday)
     ...startingStats("Cat"),
@@ -85,17 +148,17 @@ const actions = {
   feed() {
     cat.activity = "neutral";
     cat.hunger = down(cat.hunger, 20);
-    cat.happiness = up(cat.happiness, 15);
-    cat.energy = up(cat.energy, 5);
-    cat.cleanliness = down(cat.cleanliness, 5); // a bit of food in the fur
+    cat.happiness = up(cat.happiness, traits().feedJoy);
+    cat.energy = up(cat.energy, traits().feedEnergy);
+    cat.cleanliness = down(cat.cleanliness, Math.round(5 * traits().mess)); // a bit of food in the fur
     cat.message = cat.name + " enjoyed " + pronoun().possessive + " food!";
   },
   play() {
     cat.activity = "playing";
-    cat.happiness = up(cat.happiness, 15);
-    cat.energy = down(cat.energy, 5);
+    cat.happiness = up(cat.happiness, traits().playJoy);
+    cat.energy = down(cat.energy, traits().playTiredness);
     cat.hunger = up(cat.hunger, 5);
-    cat.cleanliness = down(cat.cleanliness, 15); // rolling around gets the fur messy
+    cat.cleanliness = down(cat.cleanliness, Math.round(15 * traits().mess)); // rolling around gets the fur messy
     cat.message = cat.name + " is playing with " + pronoun().possessive + " ball!";
   },
   sleep() {
@@ -107,9 +170,9 @@ const actions = {
   },
   pet() {
     cat.petStreak += 1;
-    if (cat.petStreak > PETS_BEFORE_ANGRY) {
+    if (cat.petStreak > traits().petsBeforeAngry) {
       cat.activity = "angry";
-      cat.happiness = down(cat.happiness, 15);
+      cat.happiness = down(cat.happiness, traits().angryCost);
       cat.message = cat.name + " has had enough petting! Give " + pronoun().object + " a break.";
       // Every pet while angry restarts the countdown.
       cat.angryUntil = Date.now() + CALM_DOWN_MS;
@@ -120,7 +183,14 @@ const actions = {
       cat.message = cat.name + " purrs and swishes " + pronoun().possessive + " tail.";
     }
   },
+  bellyRub() {
+    if (Math.random() < traits().bellyScratchChance) return scratch();
+    cat.activity = "neutral";
+    cat.happiness = up(cat.happiness, 10);
+    cat.message = cat.name + " rolls over and purrs. Belly rubs are the best!";
+  },
   brush() {
+    if (Math.random() < traits().brushScratchChance) return scratch();
     cat.activity = "neutral";
     cat.cleanliness = up(cat.cleanliness, 30);
     cat.happiness = up(cat.happiness, 5);
@@ -135,13 +205,34 @@ const actions = {
     Object.assign(cat, startingStats(cat.name));
   },
   timePassed() {
-    cat.hunger = up(cat.hunger, 2);
-    cat.happiness = down(cat.happiness, 2);
-    cat.energy = down(cat.energy, 2);
-    cat.cleanliness = down(cat.cleanliness, 2);
+    const t = traits();
+    cat.hunger = up(cat.hunger, t.timeHunger);
+    cat.happiness = down(cat.happiness, t.timeHappiness);
+    cat.energy = down(cat.energy, t.timeEnergy);
+    cat.cleanliness = down(cat.cleanliness, t.timeDirt);
     checkBirthday();
   },
 };
+
+// ---------- Scratching ----------
+
+// The cat scratches you: claws-out picture, a red flash, and the cat is a bit upset.
+function scratch() {
+  cat.activity = "scratching";
+  cat.happiness = down(cat.happiness, 5);
+  cat.message = "Ouch! " + cat.name + " scratched you!";
+  cat.angryUntil = Date.now() + CALM_DOWN_MS;
+  scheduleCalmDown();
+  flashRed();
+}
+
+function flashRed() {
+  if (!cat.flash) return;
+  const flash = document.createElement("div");
+  flash.className = "scratch-flash";
+  document.body.append(flash);
+  setTimeout(() => flash.remove(), 700);
+}
 
 // ---------- Birthdays ----------
 
@@ -193,12 +284,18 @@ function showConfetti() {
 function applyRules() {
   // A very hungry cat gets sadder
   if (cat.hunger > 80) {
-    cat.happiness = down(cat.happiness, 15);
+    cat.happiness = down(cat.happiness, traits().hungryCost);
   }
 
   // A dirty cat is a bit grumpy
   if (cat.cleanliness <= 20) {
     cat.happiness = down(cat.happiness, 5);
+  }
+
+  // A neurotic cat's happiness drifts back toward the middle
+  if (traits().staysInMiddle) {
+    const step = Math.min(5, Math.abs(50 - cat.happiness));
+    cat.happiness += cat.happiness < 50 ? step : -step;
   }
 
   // Lose a life when everything is at rock bottom
@@ -215,10 +312,14 @@ function applyRules() {
 // After CALM_DOWN_MS without petting, an angry cat is happy to be petted again.
 function scheduleCalmDown() {
   setTimeout(() => {
-    if (cat.activity === "angry" && Date.now() >= cat.angryUntil) {
+    const upset = cat.activity === "angry" || cat.activity === "scratching";
+    if (upset && Date.now() >= cat.angryUntil) {
+      cat.message =
+        cat.activity === "angry"
+          ? cat.name + " has calmed down. You can pet " + pronoun().object + " again."
+          : cat.name + " has calmed down.";
       cat.activity = "neutral";
       cat.petStreak = 0;
-      cat.message = cat.name + " has calmed down. You can pet " + pronoun().object + " again.";
       saveState();
       render();
     }
@@ -229,6 +330,10 @@ function doAction(name) {
   // Doing anything else breaks the petting streak; time passing doesn't.
   if (name !== "pet" && name !== "timePassed") cat.petStreak = 0;
   actions[name]();
+  // An extraverted cat enjoys any attention a little extra.
+  if (name !== "timePassed" && name !== "reset" && cat.activity !== "scratching") {
+    cat.happiness = up(cat.happiness, traits().joyBonus);
+  }
   applyRules();
   saveState();
   render();
@@ -249,6 +354,7 @@ function getMoods() {
 }
 
 function chooseImage(moodNames) {
+  if (cat.activity === "scratching") return "scratch";
   if (cat.activity === "angry") return "angry";
   if (cat.activity === "playing") return "playing";
   if (cat.activity === "sleeping") return "sleepy";
@@ -281,11 +387,42 @@ function render() {
   $("message").textContent = cat.message;
   $("lives-value").textContent = cat.lives;
   $("hearts").textContent = "❤️".repeat(cat.lives) + "💔️".repeat(3 - cat.lives);
-  $("cat-image").src = drawCat(chooseImage(moodNames), cat.color, cat.coat, cat.eyes, {
-    hat: isPartyTime(),
-    messy: cat.cleanliness <= MESSY_AT,
-  });
+  const sprite = chooseImage(moodNames);
+  const look = { hat: isPartyTime(), messy: cat.cleanliness <= MESSY_AT };
+  const draw = (extra) => drawCat(sprite, cat.color, cat.coat, cat.eyes, { ...look, ...extra });
+  catFrames = { normal: draw(), blink: draw({ blink: true }), tail: draw({ tail: true }) };
+  $("cat-image").src = catFrames.normal;
   $("game-over-image").src = drawCat("gameOver", cat.color, cat.coat, cat.eyes);
+}
+
+// ---------- Animations ----------
+
+// The cat blinks now and then and swishes its tail every few seconds.
+// (Breathing is a CSS animation in style.css.)
+let catFrames = {};
+const showFrame = (name) => ($("cat-image").src = catFrames[name]);
+const randomBetween = (min, max) => min + Math.random() * (max - min);
+
+function blinkLoop() {
+  setTimeout(() => {
+    showFrame("blink");
+    setTimeout(() => showFrame("normal"), 160);
+    blinkLoop();
+  }, randomBetween(2500, 6000));
+}
+
+function tailLoop() {
+  setTimeout(() => {
+    [0, 300, 600, 900].forEach((delay, i) =>
+      setTimeout(() => showFrame(i % 2 === 0 ? "tail" : "normal"), delay)
+    );
+    tailLoop();
+  }, randomBetween(4000, 8000));
+}
+
+if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  blinkLoop();
+  tailLoop();
 }
 
 // ---------- Wiring up buttons and the settings form ----------
@@ -298,11 +435,19 @@ const nameInput = $("name-input");
 const ageInput = $("age-input");
 const genderInput = $("gender-input");
 
-// Fill the Color, Coat and Eye color dropdowns from the lists in sprites.js.
+// Fill the Color, Coat, Eye color and Personality dropdowns from their lists.
 const colorInput = $("color-input");
 const coatInput = $("coat-input");
 const eyesInput = $("eyes-input");
-for (const [select, options] of [[colorInput, CAT_COLORS], [coatInput, CAT_COATS], [eyesInput, CAT_EYES]]) {
+const personalityInput = $("personality-input");
+const flashInput = $("flash-input");
+const dropdowns = [
+  [colorInput, CAT_COLORS],
+  [coatInput, CAT_COATS],
+  [eyesInput, CAT_EYES],
+  [personalityInput, PERSONALITIES],
+];
+for (const [select, options] of dropdowns) {
   for (const [value, info] of Object.entries(options)) {
     select.add(new Option(info.label || info, value));
   }
@@ -316,6 +461,8 @@ function fillSettingsForm() {
   colorInput.value = cat.color in CAT_COLORS ? cat.color : "orange";
   coatInput.value = cat.coat in CAT_COATS ? cat.coat : "solid";
   eyesInput.value = cat.eyes in CAT_EYES ? cat.eyes : "black";
+  personalityInput.value = cat.personality in PERSONALITIES ? cat.personality : "default";
+  flashInput.checked = cat.flash !== false;
 }
 
 // The gear opens the settings pop-up; closing it without saving throws away changes.
@@ -340,6 +487,8 @@ $("settings-form").addEventListener("submit", (event) => {
     cat.color = colorInput.value in CAT_COLORS ? colorInput.value : "orange";
     cat.coat = coatInput.value in CAT_COATS ? coatInput.value : "solid";
     cat.eyes = eyesInput.value in CAT_EYES ? eyesInput.value : "black";
+    cat.personality = personalityInput.value in PERSONALITIES ? personalityInput.value : "default";
+    cat.flash = flashInput.checked;
     cat.message = "Settings saved!";
     saveState();
     render();
@@ -357,8 +506,8 @@ doAction("timePassed");
 // Opening the game on the birthday shows the confetti again.
 if (isPartyTime() && !confettiShown) showConfetti();
 
-// If the page was closed while the cat was angry, let it calm down.
-if (cat.activity === "angry") scheduleCalmDown();
+// If the page was closed while the cat was upset, let it calm down.
+if (cat.activity === "angry" || cat.activity === "scratching") scheduleCalmDown();
 
 setInterval(() => {
   if (cat.lives > 0) doAction("timePassed");

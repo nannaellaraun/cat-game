@@ -1,7 +1,7 @@
 // Pixel-art cat sprites, drawn in the browser so the cat can have any color and coat.
 // Letters: K outline, Y fur, O stripes, L light fur (face/belly/paws), E/F iris of the left/right
 // eye, D pupil, C closed/X eyes,
-// P pink, B tear, R/r/w ball and anger mark. Regions are [x0, y0, x1, y1] boxes used by
+// P pink, B tear, R/r/w ball and anger mark, W claws and fangs. Regions are [x0, y0, x1, y1] boxes used by
 // coats like Colorpoint and Van.
 
 const SPRITES = {
@@ -61,6 +61,36 @@ const SPRITES = {
       ".KYOYKLLKLLKYOYYYOK...",
       ".KLLLKLLKLLKLLLKKK....",
       "..KKKKKKKKKKKKKK......",
+    ],
+    regions: {ears: [[0, 0, 6, 3], [10, 0, 16, 3]], mask: [[5, 7, 11, 10]], tail: [[15, 14, 21, 21]], paws: [[0, 21, 14, 22]]},
+    hat: [8, 2], // party hat: middle column and bottom row
+  },
+  scratch: {
+    art: [
+      "..KK.........KK.........",
+      ".KYYK.......KYYK........",
+      ".KYPYK.....KYPYK........",
+      ".KYYYYKKKKKYYYYK..K.K.K.",
+      "KYYYYYOYYYOYYYYYKKWKWKWK",
+      "KYYKKYYOYOYYKKYYKKWKWKWK",
+      "KYYYYKKYYYKKYYYYKKLKLKLK",
+      "KYYYEDYYYYYDFYYYKKLLLLLK",
+      "KYLLLLLLPLLLLLLYK.KLLLK.",
+      "KLLLLLKKKKKLLLLLK.KYYK..",
+      ".KLLLLKWKWKLLLLK.KYYK...",
+      "..KKYYYYYYYYYKKKYYK.....",
+      "...KYYOYYYOYYYYYYK......",
+      "..KYYYOYLYOYYYKKK.......",
+      "..KYOYYLLLYYOYK....KK...",
+      ".KYYYYLLLLLYYYYK..KYYK..",
+      ".KYOYYLLLLLYYOYK..KYOK..",
+      ".KYYYYLLLLLYYYYK..KYYK..",
+      ".KYOYKLLLLLKYOYK..KYK...",
+      ".KYYYKLLKLLKYYYK.KYOK...",
+      ".KYYYKLLKLLKYYYKKYYK....",
+      ".KYOYKLLKLLKYOYYYOK.....",
+      ".KLLLKLLKLLKLLLKKK......",
+      "..KKKKKKKKKKKKKK........",
     ],
     regions: {ears: [[0, 0, 6, 3], [10, 0, 16, 3]], mask: [[5, 7, 11, 10]], tail: [[15, 14, 21, 21]], paws: [[0, 21, 14, 22]]},
     hat: [8, 2], // party hat: middle column and bottom row
@@ -241,6 +271,7 @@ const FIXED_COLORS = {
   R: "#c81c28", // ball and anger mark
   r: "#780a14", // ball shadow
   w: "#ff9696", // ball highlight
+  W: "#ffffff", // claws and fangs
 };
 
 const WHITE = "#fbfbfb";
@@ -321,6 +352,34 @@ const PARTY_HAT = [
 const HAT_COLORS = { h: "#4aa8e0", s: "#f2d530", p: "#e84a8a" };
 const DIRT = "#6b4a2a";
 
+// Blinking: the lower row of each open eye becomes a closed-eye line, the rest becomes fur.
+function closeEyes(grid) {
+  const isEye = (c) => c === "E" || c === "F" || c === "D";
+  grid.forEach((row, y) => {
+    row.forEach((c, x) => {
+      if (isEye(c)) row[x] = grid[y + 1] && isEye(grid[y + 1][x]) ? "Y" : "C";
+    });
+  });
+}
+
+// Tail swish: the upper part of the tail moves one pixel sideways.
+// Only the tail's own pixels move (not the body outline at the edge of the tail box).
+function swishTail(grid, regions) {
+  for (const [x0, y0, x1, y1] of regions.tail) {
+    if (x1 - x0 >= y1 - y0) continue; // only upright tails, not tails lying flat
+    const lastRow = y0 + Math.floor((y1 - y0) * 0.45);
+    for (let y = y0; y <= lastRow; y++) {
+      const row = grid[y];
+      const moved = row.slice();
+      for (let x = x0 + 2; x <= x1; x++) moved[x] = ".";
+      for (let x = x0 + 2; x <= x1; x++) {
+        if (row[x] !== "." && x + 1 < row.length) moved[x + 1] = row[x];
+      }
+      grid[y] = moved;
+    }
+  }
+}
+
 // Messy fur: little tufts sticking out of the outline (T) and dirt spots on the fur (X).
 function makeMessy(grid) {
   const at = (x, y) => (grid[y] && grid[y][x]) || ".";
@@ -340,12 +399,15 @@ function makeMessy(grid) {
 const spriteCache = {};
 
 // Returns an image URL of the sprite in the given color, coat and eye color.
-// Options: hat (birthday party hat), messy (tufts and dirt when the cat needs brushing).
+// Options: hat (birthday party hat), messy (tufts and dirt when the cat needs brushing),
+// blink (eyes closed) and tail (tail swished to the side) for the animation frames.
 function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
   const sprite = SPRITES[spriteName];
   const hat = Boolean(options.hat && sprite.hat);
   const messy = Boolean(options.messy);
-  const key = [spriteName, colorName, coatName, eyesName, hat, messy].join("/");
+  const blink = Boolean(options.blink);
+  const tail = Boolean(options.tail);
+  const key = [spriteName, colorName, coatName, eyesName, hat, messy, blink, tail].join("/");
   if (spriteCache[key]) return spriteCache[key];
 
   const color = CAT_COLORS[colorName] || CAT_COLORS.orange;
@@ -353,6 +415,8 @@ function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
   const eyes = CAT_EYES[eyesName] || CAT_EYES.black;
 
   const grid = sprite.art.map((row) => [...row]);
+  if (blink) closeEyes(grid);
+  if (tail) swishTail(grid, sprite.regions);
   if (messy) makeMessy(grid);
 
   // Room above the sprite if the hat sticks out over the top.
