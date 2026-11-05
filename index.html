@@ -5,11 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cat Game</title>
 <!-- Bump ?v= on every update so browsers load the new files, not an old saved copy -->
-<link rel="stylesheet" href="style.css?v=20261105-11">
+<link rel="stylesheet" href="style.css?v=20261105-12">
 </head>
 <body>
 <div class="game">
   <button type="button" id="settings-button" class="icon-button" aria-label="Cat settings">⚙️</button>
+
+  <!-- Your cats: click a face to switch, + to adopt another -->
+  <nav id="cat-switcher" aria-label="Your cats"></nav>
 
   <!-- Shown while the cat still has lives -->
   <section id="playing-view">
@@ -36,13 +39,17 @@
     <h3>Lives: <span id="lives-value"></span></h3>
     <p id="hearts"></p>
 
-    <img id="cat-image" alt="Cat">
+    <div id="cat-pictures">
+      <img id="cat-image" alt="Cat">
+      <img id="friend-image" alt="" hidden>
+    </div>
 
     <div class="actions">
       <button data-action="feed">Feed <span class="name"></span></button>
       <button data-action="play">Play with <span class="name"></span></button>
       <button data-action="pet">Pet <span class="name"></span></button>
       <button type="button" id="laser-button">Laser dot</button>
+      <button type="button" id="together-button" hidden>Play together</button>
       <button data-action="bellyRub">Belly rub</button>
       <button data-action="brush">Brush <span class="name"></span></button>
       <button data-action="sleep">Sleep</button>
@@ -96,16 +103,17 @@
         <select id="personality-input"></select>
       </div>
       <div class="setting">
-        <label for="flash-input">Red flash when scratched:</label>
+        <label for="flash-input">Red flash when scratched (all cats):</label>
         <input type="checkbox" id="flash-input">
       </div>
       <p id="settings-error" class="message"></p>
       <button type="submit">Save Settings</button>
+      <button type="button" id="remove-cat" class="danger-button">Remove this cat</button>
     </form>
   </dialog>
 
 </div>
-<script src="sprites.js?v=20261105-11"></script>
-<script src="game.js?v=20261105-11"></script>
+<script src="sprites.js?v=20261105-12"></script>
+<script src="game.js?v=20261105-12"></script>
 </body>
 </html>

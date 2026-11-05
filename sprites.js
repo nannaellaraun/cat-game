@@ -222,6 +222,24 @@ const SPRITES = {
     ],
     regions: {ears: [[0, 13, 4, 15], [8, 13, 12, 15]], mask: [[5, 6, 9, 9]], tail: [[32, 5, 35, 12]], paws: [[14, 4, 31, 5]]},
   },
+  face: { // just the head, for the row of cats to switch between
+    art: [
+      "..KK.........KK..",
+      ".KYYK.......KYYK.",
+      ".KYPYK.....KYPYK.",
+      ".KYYYYKKKKKYYYYK.",
+      "KYYYYYOYYYOYYYYYK",
+      "KYYYYYYOYOYYYYYYK",
+      "KYYYEDYYYYYDFYYYK",
+      "KYYYEDYYYYYDFYYYK",
+      "KYLLLLLLKLLLLLLYK",
+      "KLPPLLLPPPLLLPPLK",
+      ".KLLLLLLLLLLLLLK.",
+      "..KKKKKKKKKKKKK..",
+    ],
+    regions: {ears: [[0, 0, 6, 3], [10, 0, 16, 3]], mask: [[5, 7, 11, 10]], tail: [], paws: []},
+    hat: [8, 2], // party hat: middle column and bottom row
+  },
   gameOver: {
     art: [
       "..KK..........KK..",

@@ -17,6 +17,8 @@ const CALM_DOWN_MS = 10 * 1000; // an angry or scratching cat calms down after 1
 const BIRTHDAY_MS = 7 * 24 * 60 * 60 * 1000; // the cat has a birthday every 7 days
 const MAX_AGE = 30; // same limit as Cat Settings
 const MESSY_AT = 30; // at this cleanliness or lower the cat looks messy
+const MAX_CATS = 4;
+const JEALOUS_MS = 10 * 60 * 1000; // a cat ignored this long gets jealous of the others
 
 // ---------- Personalities ----------
 
@@ -104,43 +106,77 @@ function startingStats(name) {
   };
 }
 
-function loadState() {
-  const fresh = {
-    name: "Cat",
+// A new cat with the default look and starting stats.
+function newCat(name) {
+  return {
+    name,
     age: 0,
     gender: "none",
     color: "orange",
     coat: "solid",
     eyes: "black",
     personality: "default",
-    flash: true, // red flash when the cat scratches
     lastBirthday: Date.now(), // the next birthday is 7 days after this
     partyUntil: 0, // the party hat is worn until this time (end of the birthday)
-    ...startingStats("Cat"),
+    lastAttention: Date.now(), // when you last did something with this cat (for jealousy)
+    ...startingStats(name),
   };
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!saved) return fresh;
-    const loaded = { ...fresh, ...saved };
-    // A number that is missing or broken in the save (e.g. from an older version) gets its starting value.
-    for (const [key, value] of Object.entries(fresh)) {
-      if (typeof value === "number" && !Number.isFinite(loaded[key])) loaded[key] = value;
-    }
-    return loaded;
-  } catch {
-    return fresh;
+}
+
+// Fills in anything missing or broken in a saved cat (e.g. from an older version).
+function repairCat(saved) {
+  const fresh = newCat("Cat");
+  const loaded = { ...fresh, ...saved };
+  for (const [key, value] of Object.entries(fresh)) {
+    if (typeof value === "number" && !Number.isFinite(loaded[key])) loaded[key] = value;
   }
+  delete loaded.flash; // the flash setting now belongs to the whole game
+  return loaded;
+}
+
+// The saved game: all the cats, which one you're looking at, and game-wide settings.
+function loadState() {
+  let saved = null;
+  try {
+    saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  } catch {
+    // A broken save starts a new game.
+  }
+  if (!saved) return { cats: [newCat("Cat")], current: 0, flash: true };
+
+  // Saves from before multiple cats held just one cat.
+  if (!Array.isArray(saved.cats)) {
+    return { cats: [repairCat(saved)], current: 0, flash: saved.flash !== false };
+  }
+  const cats = saved.cats.filter(Boolean).slice(0, MAX_CATS).map(repairCat);
+  if (cats.length === 0) cats.push(newCat("Cat"));
+  const current = Math.min(Math.max(0, Number(saved.current) || 0), cats.length - 1);
+  return { cats, current, flash: saved.flash !== false };
 }
 
 function saveState() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cat));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
   } catch {
     // Private mode or storage disabled – the game still works, it just won't remember.
   }
 }
 
-let cat = loadState();
+let game = loadState();
+let cat = game.cats[game.current]; // the cat you're looking at
+
+// Runs fn with `cat` set to another cat, e.g. to let time pass for cats in the background.
+function withCat(other, fn) {
+  const before = cat;
+  cat = other;
+  try {
+    return fn();
+  } finally {
+    cat = before;
+  }
+}
+
+const isCurrentCat = (c) => c === game.cats[game.current];
 
 // ---------- Helpers ----------
 
@@ -215,6 +251,20 @@ const actions = {
   reset() {
     Object.assign(cat, startingStats(cat.name));
   },
+  playTogether() {
+    const friend = playFriend();
+    if (!friend) return;
+    for (const c of [cat, friend]) {
+      c.activity = "chasing";
+      c.happiness = up(c.happiness, 10);
+      c.energy = down(c.energy, 5);
+      c.hunger = up(c.hunger, 5);
+      c.cleanliness = down(c.cleanliness, 5);
+      c.lastAttention = Date.now();
+      c.message = cat.name + " and " + friend.name + " play together!";
+    }
+    togetherFriend = friend;
+  },
   laserDone() {
     const caught = lastLaserCatches;
     cat.activity = "chasing";
@@ -249,7 +299,7 @@ function scratch() {
 }
 
 function flashRed() {
-  if (!cat.flash) return;
+  if (!game.flash) return;
   const flash = document.createElement("div");
   flash.className = "scratch-flash";
   document.body.append(flash);
@@ -333,19 +383,21 @@ function applyRules() {
 
 // After CALM_DOWN_MS without petting, an angry cat is happy to be petted again.
 function scheduleCalmDown() {
-  setTimeout(() => {
-    const upset = cat.activity === "angry" || cat.activity === "scratching";
-    if (upset && Date.now() >= cat.angryUntil) {
-      cat.message =
-        cat.activity === "angry"
-          ? cat.name + " has calmed down. You can pet " + pronoun().object + " again."
-          : cat.name + " has calmed down.";
-      cat.activity = "neutral";
-      cat.petStreak = 0;
-      saveState();
-      render();
-    }
-  }, Math.max(0, cat.angryUntil - Date.now()));
+  const thisCat = cat;
+  setTimeout(() => withCat(thisCat, calmDown), Math.max(0, cat.angryUntil - Date.now()));
+}
+
+function calmDown() {
+  const upset = cat.activity === "angry" || cat.activity === "scratching";
+  if (!upset || Date.now() < cat.angryUntil) return;
+  cat.message =
+    cat.activity === "angry"
+      ? cat.name + " has calmed down. You can pet " + pronoun().object + " again."
+      : cat.name + " has calmed down.";
+  cat.activity = "neutral";
+  cat.petStreak = 0;
+  saveState();
+  if (isCurrentCat(cat)) render();
 }
 
 function doAction(name) {
@@ -353,6 +405,7 @@ function doAction(name) {
   // Doing anything else breaks the petting streak; time passing doesn't.
   if (name !== "pet" && name !== "timePassed") cat.petStreak = 0;
   actions[name]();
+  if (name !== "timePassed") giveAttention();
   // An extraverted cat enjoys any attention a little extra.
   if (name !== "timePassed" && name !== "reset" && cat.activity !== "scratching") {
     cat.happiness = up(cat.happiness, traits().joyBonus);
@@ -362,6 +415,127 @@ function doAction(name) {
   render();
   if (nextAnimation) playAnimation(nextAnimation);
   nextAnimation = null;
+  if (togetherFriend) showFriend(togetherFriend);
+  togetherFriend = null;
+}
+
+// Time passes for every cat, also the ones you're not looking at.
+function timePasses() {
+  for (const c of game.cats) {
+    if (c.lives > 0) {
+      withCat(c, () => {
+        actions.timePassed();
+        applyRules();
+      });
+    }
+  }
+  saveState();
+  render();
+}
+
+// ---------- More than one cat ----------
+
+let togetherFriend = null; // the cat that just played with the current cat
+
+const isJealous = (c) => game.cats.length > 1 && c.lives > 0 && Date.now() - c.lastAttention > JEALOUS_MS;
+
+// Doing something with this cat: the other cats who have been ignored for long get a bit sadder.
+function giveAttention() {
+  cat.lastAttention = Date.now();
+  for (const other of game.cats) {
+    if (other !== cat && isJealous(other)) other.happiness = down(other.happiness, 3);
+  }
+}
+
+// The cat to play with: the one that has been ignored the longest.
+function playFriend() {
+  const others = game.cats.filter((c) => c !== cat && c.lives > 0);
+  return others.sort((a, b) => a.lastAttention - b.lastAttention)[0] || null;
+}
+
+function switchCat(index) {
+  if (laser || index === game.current || !game.cats[index]) return;
+  stopAnimation();
+  game.current = index;
+  cat = game.cats[index];
+  lookDirection = null;
+  saveState();
+  render();
+}
+
+function adoptCat() {
+  if (game.cats.length >= MAX_CATS || laser) return;
+  game.cats.push(newCat("Cat " + (game.cats.length + 1)));
+  switchCat(game.cats.length - 1);
+  cat.message = "Welcome home, " + cat.name + "! Give your new cat a name in the settings.";
+  saveState();
+  render();
+  openSettings();
+}
+
+function removeCat() {
+  if (game.cats.length <= 1) return;
+  if (!confirm("Remove " + cat.name + "? This can't be undone.")) return;
+  stopAnimation();
+  game.cats.splice(game.current, 1);
+  game.current = Math.max(0, game.current - 1);
+  cat = game.cats[game.current];
+  saveState();
+  render();
+  settingsDialog.close();
+}
+
+// The row of little cat faces at the top of the card, plus a + to adopt another cat.
+function renderSwitcher() {
+  const row = $("cat-switcher");
+  row.replaceChildren();
+  game.cats.forEach((c, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "cat-face" + (index === game.current ? " selected" : "");
+    button.setAttribute("aria-label", c.name);
+    button.setAttribute("aria-pressed", index === game.current);
+    button.title = c.name;
+    const face = document.createElement("img");
+    face.alt = "";
+    face.src = drawCat(c.lives > 0 ? "face" : "gameOver", c.color, c.coat, c.eyes, {
+      hat: Date.now() < c.partyUntil && c.lives > 0,
+    });
+    button.append(face);
+    button.addEventListener("click", () => switchCat(index));
+    row.append(button);
+  });
+  if (game.cats.length < MAX_CATS) {
+    const adopt = document.createElement("button");
+    adopt.type = "button";
+    adopt.className = "cat-face adopt";
+    adopt.textContent = "+";
+    adopt.title = "Adopt a cat";
+    adopt.setAttribute("aria-label", "Adopt a cat");
+    adopt.addEventListener("click", adoptCat);
+    row.append(adopt);
+  }
+}
+
+// Play together: the friend appears next to the cat for a few seconds.
+let friendTimer = null;
+function showFriend(friend) {
+  const image = $("friend-image");
+  image.src = drawCat("chase", friend.color, friend.coat, friend.eyes, {
+    hat: Date.now() < friend.partyUntil,
+    messy: friend.cleanliness <= MESSY_AT,
+  });
+  image.alt = friend.name;
+  image.hidden = false;
+  $("cat-pictures").classList.add("together");
+  clearTimeout(friendTimer);
+  friendTimer = setTimeout(hideFriend, 3000);
+}
+
+function hideFriend() {
+  clearTimeout(friendTimer);
+  $("friend-image").hidden = true;
+  $("cat-pictures").classList.remove("together");
 }
 
 // ---------- Drawing the page ----------
@@ -374,6 +548,7 @@ function getMoods() {
   if (cat.energy <= 20) moods.push(["Sleepy", "💤️"]);
   if (cat.cleanliness <= MESSY_AT) moods.push(["Messy", "🛁"]);
   if (isPartyTime()) moods.push(["Birthday", "🎂"]);
+  if (isJealous(cat)) moods.push(["Jealous", "😾"]);
   if (cat.happiness >= 30 && cat.happiness <= 70) moods.push(["Neutral", "☁️"]);
   return moods;
 }
@@ -411,6 +586,8 @@ function render() {
   }
 
   $("message").textContent = cat.message;
+  renderSwitcher();
+  $("together-button").hidden = !playFriend();
   $("lives-value").textContent = cat.lives;
   $("hearts").textContent = "❤️".repeat(cat.lives) + "💔️".repeat(3 - cat.lives);
   const sprite = chooseImage(moodNames);
@@ -482,6 +659,7 @@ function playAnimation(name) {
 }
 
 function stopAnimation() {
+  hideFriend();
   if (!animation) return;
   animation.timers.forEach(clearTimeout);
   animation = null;
@@ -709,17 +887,21 @@ function fillSettingsForm() {
   coatInput.value = cat.coat in CAT_COATS ? cat.coat : "solid";
   eyesInput.value = cat.eyes in CAT_EYES ? cat.eyes : "black";
   personalityInput.value = cat.personality in PERSONALITIES ? cat.personality : "default";
-  flashInput.checked = cat.flash !== false;
+  flashInput.checked = game.flash !== false;
+  $("remove-cat").hidden = game.cats.length <= 1;
 }
 
 // The gear opens the settings pop-up; closing it without saving throws away changes.
 const settingsDialog = $("settings-dialog");
 const settingsError = $("settings-error");
-$("settings-button").addEventListener("click", () => {
+function openSettings() {
   fillSettingsForm();
   settingsError.textContent = "";
   settingsDialog.showModal();
-});
+}
+$("settings-button").addEventListener("click", openSettings);
+$("remove-cat").addEventListener("click", removeCat);
+$("together-button").addEventListener("click", () => doAction("playTogether"));
 $("settings-close").addEventListener("click", () => settingsDialog.close());
 
 $("settings-form").addEventListener("submit", (event) => {
@@ -735,7 +917,7 @@ $("settings-form").addEventListener("submit", (event) => {
     cat.coat = coatInput.value in CAT_COATS ? coatInput.value : "solid";
     cat.eyes = eyesInput.value in CAT_EYES ? eyesInput.value : "black";
     cat.personality = personalityInput.value in PERSONALITIES ? personalityInput.value : "default";
-    cat.flash = flashInput.checked;
+    game.flash = flashInput.checked;
     cat.message = "Settings saved!";
     saveState();
     render();
@@ -748,14 +930,14 @@ $("settings-form").addEventListener("submit", (event) => {
 // ---------- Time passing ----------
 
 // Opening the page counts as time passing.
-doAction("timePassed");
+timePasses();
 
 // Opening the game on the birthday shows the confetti again.
 if (isPartyTime() && !confettiShown) showConfetti();
 
 // If the page was closed while the cat was upset, let it calm down.
-if (cat.activity === "angry" || cat.activity === "scratching") scheduleCalmDown();
+for (const c of game.cats) {
+  if (c.activity === "angry" || c.activity === "scratching") withCat(c, scheduleCalmDown);
+}
 
-setInterval(() => {
-  if (cat.lives > 0) doAction("timePassed");
-}, TICK_MS);
+setInterval(timePasses, TICK_MS);
