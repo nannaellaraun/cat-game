@@ -38,6 +38,7 @@ const DEFAULT_TRAITS = {
   staysInMiddle: false, // happiness drifts back toward 50
   bellyScratchChance: 0.3, // chance of a scratch from a belly rub
   brushScratchChance: 0, // chance of a scratch from brushing
+  petScratchChance: 0, // chance of a scratch from petting
 };
 
 const PERSONALITIES = {
@@ -65,15 +66,16 @@ const PERSONALITIES = {
     label: "Bossy",
     petsBeforeAngry: 2,
     playJoy: 8,
-    bellyScratchChance: 0.6,
+    bellyScratchChance: 0.75,
     brushScratchChance: 0.25,
+    petScratchChance: 0.2,
   },
   agreeable: {
     label: "Agreeable",
     timeHunger: 1,
     timeDirt: 1,
     mess: 0.5,
-    bellyScratchChance: 0.1,
+    bellyScratchChance: 0, // never scratches during belly rubs
   },
 };
 
@@ -169,6 +171,7 @@ const actions = {
     cat.message = cat.name + " curled up for " + pronoun().possessive + " nap.";
   },
   pet() {
+    if (Math.random() < traits().petScratchChance) return scratch();
     cat.petStreak += 1;
     if (cat.petStreak > traits().petsBeforeAngry) {
       cat.activity = "angry";
