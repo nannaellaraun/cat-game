@@ -49,7 +49,13 @@ function loadState() {
   };
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return saved ? { ...fresh, ...saved } : fresh;
+    if (!saved) return fresh;
+    const loaded = { ...fresh, ...saved };
+    // A number that is missing or broken in the save (e.g. from an older version) gets its starting value.
+    for (const [key, value] of Object.entries(fresh)) {
+      if (typeof value === "number" && !Number.isFinite(loaded[key])) loaded[key] = value;
+    }
+    return loaded;
   } catch {
     return fresh;
   }
