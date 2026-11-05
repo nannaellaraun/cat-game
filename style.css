@@ -13,6 +13,7 @@ body {
   padding: 30px;
   border-radius: 20px;
   box-shadow: 0 4px 15px #0002;
+  position: relative; /* lets the settings gear sit in the corner */
 }
 h1 {
   color: #87634c;
@@ -94,4 +95,48 @@ button:hover {
 .setting select:focus {
   outline: none;
   border-color: #87634c;
+}
+
+/* Small round icon buttons: the settings gear and the close cross */
+.icon-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0;
+  font-size: 22px;
+  line-height: 40px;
+  color: #87634c;
+  background: transparent;
+  border-radius: 50%;
+}
+.icon-button:hover {
+  background: #0001;
+}
+
+/* Cat Settings pop-up */
+#settings-dialog {
+  position: fixed; /* keep it centered on the screen, not inside the card */
+  width: calc(100% - 32px);
+  max-width: 360px;
+  box-sizing: border-box;
+  padding: 30px 24px 20px;
+  background: #C3E3D0;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px #0003;
+  font-family: inherit;
+  color: inherit;
+  text-align: center;
+}
+#settings-dialog::backdrop {
+  background: #0005;
+}
+#settings-dialog h2 {
+  margin-top: 0;
+}
+#settings-error:empty {
+  display: none;
 }

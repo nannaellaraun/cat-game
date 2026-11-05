@@ -219,9 +219,6 @@ document.querySelectorAll("[data-action]").forEach((button) => {
 const nameInput = $("name-input");
 const ageInput = $("age-input");
 const genderInput = $("gender-input");
-nameInput.value = cat.name;
-ageInput.value = cat.age;
-genderInput.value = cat.gender in PRONOUNS ? cat.gender : "none";
 
 // Fill the Color, Coat and Eye color dropdowns from the lists in sprites.js.
 const colorInput = $("color-input");
@@ -232,9 +229,26 @@ for (const [select, options] of [[colorInput, CAT_COLORS], [coatInput, CAT_COATS
     select.add(new Option(info.label || info, value));
   }
 }
-colorInput.value = cat.color in CAT_COLORS ? cat.color : "orange";
-coatInput.value = cat.coat in CAT_COATS ? cat.coat : "solid";
-eyesInput.value = cat.eyes in CAT_EYES ? cat.eyes : "black";
+
+// Show the cat's current settings in the form.
+function fillSettingsForm() {
+  nameInput.value = cat.name;
+  ageInput.value = cat.age;
+  genderInput.value = cat.gender in PRONOUNS ? cat.gender : "none";
+  colorInput.value = cat.color in CAT_COLORS ? cat.color : "orange";
+  coatInput.value = cat.coat in CAT_COATS ? cat.coat : "solid";
+  eyesInput.value = cat.eyes in CAT_EYES ? cat.eyes : "black";
+}
+
+// The gear opens the settings pop-up; closing it without saving throws away changes.
+const settingsDialog = $("settings-dialog");
+const settingsError = $("settings-error");
+$("settings-button").addEventListener("click", () => {
+  fillSettingsForm();
+  settingsError.textContent = "";
+  settingsDialog.showModal();
+});
+$("settings-close").addEventListener("click", () => settingsDialog.close());
 
 $("settings-form").addEventListener("submit", (event) => {
   event.preventDefault(); // stay on the page instead of reloading it
@@ -249,11 +263,12 @@ $("settings-form").addEventListener("submit", (event) => {
     cat.coat = coatInput.value in CAT_COATS ? coatInput.value : "solid";
     cat.eyes = eyesInput.value in CAT_EYES ? eyesInput.value : "black";
     cat.message = "Settings saved!";
+    saveState();
+    render();
+    settingsDialog.close();
   } else {
-    cat.message = "Please enter a name and an age from 0 to 30.";
+    settingsError.textContent = "Please enter a name and an age from 0 to 30.";
   }
-  saveState();
-  render();
 });
 
 // ---------- Time passing ----------

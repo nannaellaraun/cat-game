@@ -8,6 +8,7 @@
 </head>
 <body>
 <div class="game">
+  <button type="button" id="settings-button" class="icon-button" aria-label="Cat settings">⚙️</button>
 
   <!-- Shown while the cat still has lives -->
   <section id="playing-view">
@@ -51,38 +52,42 @@
     <button data-action="reset">Restart Game</button>
   </section>
 
-  <h2>Cat Settings</h2>
-  <form id="settings-form">
-    <div class="setting">
-      <label for="name-input">Cat's name:</label>
-      <input type="text" id="name-input" maxlength="30" required>
-    </div>
-    <div class="setting">
-      <label for="age-input">Cat's age:</label>
-      <input type="number" id="age-input" min="0" max="30" required>
-    </div>
-    <div class="setting">
-      <label for="gender-input">Choose gender:</label>
-      <select id="gender-input">
-        <option value="female">Female</option>
-        <option value="male">Male</option>
-        <option value="none">Not chosen</option>
-      </select>
-    </div>
-    <div class="setting">
-      <label for="color-input">Color:</label>
-      <select id="color-input"></select>
-    </div>
-    <div class="setting">
-      <label for="coat-input">Coat:</label>
-      <select id="coat-input"></select>
-    </div>
-    <div class="setting">
-      <label for="eyes-input">Eye color:</label>
-      <select id="eyes-input"></select>
-    </div>
-    <button type="submit">Save Settings</button>
-  </form>
+  <dialog id="settings-dialog">
+    <button type="button" id="settings-close" class="icon-button" aria-label="Close settings">✕</button>
+    <h2>Cat Settings</h2>
+    <form id="settings-form">
+      <div class="setting">
+        <label for="name-input">Cat's name:</label>
+        <input type="text" id="name-input" maxlength="30" required>
+      </div>
+      <div class="setting">
+        <label for="age-input">Cat's age:</label>
+        <input type="number" id="age-input" min="0" max="30" required>
+      </div>
+      <div class="setting">
+        <label for="gender-input">Choose gender:</label>
+        <select id="gender-input">
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+          <option value="none">Not chosen</option>
+        </select>
+      </div>
+      <div class="setting">
+        <label for="color-input">Color:</label>
+        <select id="color-input"></select>
+      </div>
+      <div class="setting">
+        <label for="coat-input">Coat:</label>
+        <select id="coat-input"></select>
+      </div>
+      <div class="setting">
+        <label for="eyes-input">Eye color:</label>
+        <select id="eyes-input"></select>
+      </div>
+      <p id="settings-error" class="message"></p>
+      <button type="submit">Save Settings</button>
+    </form>
+  </dialog>
 
 </div>
 <script src="sprites.js"></script>
