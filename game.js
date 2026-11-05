@@ -9,7 +9,11 @@ const IMAGES = {
   playing: "playing.png",
   sad: "sad-losesaheart.png",
   sleepy: "sleepy-sleeping.png",
+  angry: "angry.png",
 };
+
+const PETS_BEFORE_ANGRY = 5; // the 6th pet in a row annoys the cat
+const CALM_DOWN_MS = 10 * 1000; // an angry cat calms down after 10 seconds of no petting
 
 // ---------- State ----------
 
@@ -20,6 +24,8 @@ function startingStats(name) {
     energy: 90,
     lives: 3,
     activity: "neutral",
+    petStreak: 0, // how many times in a row the cat has been petted
+    angryUntil: 0, // time (ms) when an angry cat calms down
     message: name + " is relaxing.",
   };
 }
@@ -73,6 +79,21 @@ const actions = {
     cat.energy = up(cat.energy, 30);
     cat.message = cat.name + " is taking a nap.";
   },
+  pet() {
+    cat.petStreak += 1;
+    if (cat.petStreak > PETS_BEFORE_ANGRY) {
+      cat.activity = "angry";
+      cat.happiness = down(cat.happiness, 15);
+      cat.message = cat.name + " has had enough petting!";
+      // Every pet while angry restarts the countdown.
+      cat.angryUntil = Date.now() + CALM_DOWN_MS;
+      scheduleCalmDown();
+    } else {
+      cat.activity = "neutral";
+      cat.happiness = up(cat.happiness, 5);
+      cat.message = cat.name + " purrs.";
+    }
+  },
   meow() {
     cat.activity = "neutral";
     cat.happiness = up(cat.happiness, 5);
@@ -106,7 +127,22 @@ function applyRules() {
   }
 }
 
+// After CALM_DOWN_MS without petting, an angry cat is happy to be petted again.
+function scheduleCalmDown() {
+  setTimeout(() => {
+    if (cat.activity === "angry" && Date.now() >= cat.angryUntil) {
+      cat.activity = "neutral";
+      cat.petStreak = 0;
+      cat.message = cat.name + " has calmed down.";
+      saveState();
+      render();
+    }
+  }, Math.max(0, cat.angryUntil - Date.now()));
+}
+
 function doAction(name) {
+  // Doing anything else breaks the petting streak; time passing doesn't.
+  if (name !== "pet" && name !== "timePassed") cat.petStreak = 0;
   actions[name]();
   applyRules();
   saveState();
@@ -126,6 +162,7 @@ function getMoods() {
 }
 
 function chooseImage(moodNames) {
+  if (cat.activity === "angry") return IMAGES.angry;
   if (cat.activity === "playing") return IMAGES.playing;
   if (cat.activity === "sleeping") return IMAGES.sleepy;
   if (cat.lives < 3 || moodNames.includes("Sad")) return IMAGES.sad;
@@ -191,6 +228,9 @@ $("settings-form").addEventListener("submit", (event) => {
 
 // Opening the page counts as time passing.
 doAction("timePassed");
+
+// If the page was closed while the cat was angry, let it calm down.
+if (cat.activity === "angry") scheduleCalmDown();
 
 setInterval(() => {
   if (cat.lives > 0) doAction("timePassed");
