@@ -1,5 +1,5 @@
 body {
-  background: #E3C3C6;
+  background: #E3D2C1; /* latte */
   font-family: 'Courier', monospace;
   font-smooth: never;
   -webkit-font-smoothing: none;
@@ -7,7 +7,7 @@ body {
   padding: 40px 16px;
 }
 .game {
-  background: #C3E3D0;
+  background: #FBF5EC; /* cream */
   max-width: 400px;
   margin: auto;
   padding: 30px;
@@ -19,7 +19,7 @@ h1 {
   color: #87634c;
 }
 .bar {
-  background: #eee;
+  background: #ece6dc;
   height: 15px;
   border-radius: 20px;
   overflow: hidden;
@@ -127,7 +127,7 @@ button:hover {
   max-width: 360px;
   box-sizing: border-box;
   padding: 30px 24px 20px;
-  background: #C3E3D0;
+  background: #FBF5EC;
   border: none;
   border-radius: 20px;
   box-shadow: 0 4px 15px #0003;
