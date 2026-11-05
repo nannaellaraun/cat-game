@@ -123,6 +123,33 @@ const SPRITES = {
     regions: {ears: [[6, 5, 10, 7], [14, 5, 18, 7]], mask: [[9, 11, 15, 13]], tail: [[33, 0, 38, 8]], paws: [[7, 16, 18, 17], [27, 16, 34, 17]]},
     hat: [12, 6], // party hat: middle column and bottom row
   },
+  chase: { // the playing pose without the ball, for the laser dot game
+    art: [
+      "....................................KK.",
+      "...................................KYYK",
+      "...................................KYOK",
+      "...................................KYYK",
+      "..................................KYYK.",
+      ".......KK......KK.................KYOK.",
+      "......KYYK....KYYK...............KYYK..",
+      "......KYPYKKKKYPYK...............KYOK..",
+      ".....KYYYYOYYOYYYYKKKKKKKKKKKKKKKYYK...",
+      ".....KYYYYYOOYYYYYYKYYOYYYOYYYOYYYK....",
+      ".....KYYEDYYYYDFYYYKYOYYYOYYYOYYYYK....",
+      ".....KYYEDYYYYDFYYYYYYYYOYYYOYYYOYK....",
+      ".....KLLLLLLKLLLLLLYYOYYYYYYYYYYYYK....",
+      ".....KLPPLLPPPLLPPLYYYYYOYYYOYYYOYK....",
+      "......KLLLLLLLLLLLKYYYYYYYYYYYYYYYK....",
+      ".......KKKKKKKKKKKLLLLLLLLLLLKYYYYK....",
+      "........KLLK.KLLK.KKKKKKKKKKKKLLLK.....",
+      "........KLLK..KLLK.........KLLKKLLK....",
+      ".........KKK...KKK..........KKK..KK....",
+      ".......................................",
+      ".......................................",
+    ],
+    regions: {ears: [[6, 5, 10, 7], [14, 5, 18, 7]], mask: [[9, 11, 15, 13]], tail: [[33, 0, 38, 8]], paws: [[7, 16, 18, 17], [27, 16, 34, 17]]},
+    hat: [12, 6], // party hat: middle column and bottom row
+  },
   sad: {
     art: [
       ".........................KK..",

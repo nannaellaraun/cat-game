@@ -224,3 +224,71 @@ button:hover {
   position: absolute;
   image-rendering: pixelated;
 }
+
+/* Laser dot game: a layer over the card that catches clicks while a round is played */
+.laser-area {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius: 20px;
+  cursor: crosshair;
+}
+.laser-score {
+  position: absolute;
+  top: 8px;
+  left: 16px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #fbf5ecdd;
+  color: #87634c;
+  font-weight: bold;
+}
+.laser-stop {
+  position: absolute;
+  top: 4px;
+  right: 12px;
+}
+.laser-dot {
+  position: absolute;
+  width: 44px; /* big enough to tap on a phone */
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: left 0.25s ease-out, top 0.25s ease-out;
+}
+.laser-dot:hover {
+  background: transparent;
+}
+.laser-dot::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  background: #ff2020;
+  box-shadow: 0 0 0 3px #ff6a6a88, 0 0 0 7px #ff6a6a33;
+}
+.laser-plus {
+  position: absolute;
+  color: #c81c28;
+  font-weight: bold;
+  pointer-events: none;
+  animation: laser-plus 0.7s ease-out forwards;
+}
+@keyframes laser-plus {
+  to {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .laser-dot {
+    transition: none;
+  }
+}

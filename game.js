@@ -39,6 +39,8 @@ const DEFAULT_TRAITS = {
   bellyScratchChance: 0.3, // chance of a scratch from a belly rub
   brushScratchChance: 0, // chance of a scratch from brushing
   petScratchChance: 0, // chance of a scratch from petting
+  laserSeconds: 20, // how long a laser dot round lasts
+  laserJoy: 1, // happiness from laser catches (1 = normal)
 };
 
 const PERSONALITIES = {
@@ -61,6 +63,8 @@ const PERSONALITIES = {
     timeHappiness: 3, // needs more playing
     timeEnergy: 1, // energy stays high
     bellyScratchChance: 0.2,
+    laserSeconds: 30, // loves the laser dot
+    laserJoy: 1.5,
   },
   bossy: {
     label: "Bossy",
@@ -69,6 +73,8 @@ const PERSONALITIES = {
     bellyScratchChance: 0.75,
     brushScratchChance: 0.25,
     petScratchChance: 0.2,
+    laserSeconds: 10, // gets bored of the laser dot
+    laserJoy: 0.5,
   },
   agreeable: {
     label: "Agreeable",
@@ -208,6 +214,17 @@ const actions = {
   },
   reset() {
     Object.assign(cat, startingStats(cat.name));
+  },
+  laserDone() {
+    const caught = lastLaserCatches;
+    cat.activity = "chasing";
+    cat.happiness = up(cat.happiness, Math.min(30, Math.round(caught * 3 * traits().laserJoy)));
+    cat.energy = down(cat.energy, 8);
+    cat.hunger = up(cat.hunger, 5);
+    cat.message =
+      caught === 0
+        ? cat.name + " watched the laser dot, but nobody caught it."
+        : cat.name + " caught the laser dot " + caught + (caught === 1 ? " time!" : " times!");
   },
   timePassed() {
     const t = traits();
@@ -365,6 +382,7 @@ function chooseImage(moodNames) {
   if (cat.activity === "scratching") return "scratch";
   if (cat.activity === "angry") return "angry";
   if (cat.activity === "playing") return "playing";
+  if (cat.activity === "chasing") return "chase"; // laser dot game: playing pose without the ball
   if (cat.activity === "sleeping") return "sleepy";
   if (cat.lives < 3 || moodNames.includes("Sad")) return "sad";
   if (moodNames.includes("Sleepy")) return "sleepy";
@@ -511,7 +529,7 @@ function setLook(side) {
 }
 
 function flyVisitor() {
-  if (visitorFlying || cat.lives <= 0 || document.hidden) return;
+  if (visitorFlying || laser || cat.lives <= 0 || document.hidden) return;
   visitorFlying = true;
   const card = document.querySelector(".game");
   let sky = card.querySelector(".sky");
@@ -572,7 +590,89 @@ function visitorLoop(first) {
 
 if (!reducedMotion) visitorLoop(true);
 
+// ---------- Laser dot game ----------
+
+// A red dot zips around the card; click or tap it to catch it. The cat watches it with its eyes.
+let laser = null; // the round being played right now
+let lastLaserCatches = 0; // catches in the round that just ended, for actions.laserDone
+
+function startLaserGame() {
+  if (laser || cat.lives <= 0) return;
+  stopAnimation();
+  const card = document.querySelector(".game");
+  const area = document.createElement("div");
+  area.className = "laser-area";
+  area.innerHTML =
+    '<p class="laser-score"></p>' +
+    '<button type="button" class="laser-stop">Stop</button>' +
+    '<button type="button" class="laser-dot" aria-label="Laser dot"></button>';
+  card.append(area);
+
+  const seconds = traits().laserSeconds;
+  laser = { area, dot: area.querySelector(".laser-dot"), caught: 0, start: Date.now(), seconds, moveTimer: null };
+  cat.activity = "chasing";
+  cat.message = "Catch the laser dot! Click or tap it.";
+  render();
+
+  laser.dot.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    catchDot();
+  });
+  area.querySelector(".laser-stop").addEventListener("click", endLaserGame);
+  laser.clock = setInterval(updateLaserScore, 200);
+  updateLaserScore();
+  moveDot();
+}
+
+function updateLaserScore() {
+  const left = Math.max(0, laser.seconds - (Date.now() - laser.start) / 1000);
+  laser.area.querySelector(".laser-score").textContent = "Caught: " + laser.caught + " · " + Math.ceil(left) + "s";
+  if (left <= 0) endLaserGame();
+}
+
+// Jump to a new random spot; the jumps get quicker as the round goes on.
+function moveDot() {
+  clearTimeout(laser.moveTimer);
+  const box = laser.area.getBoundingClientRect();
+  const x = 30 + Math.random() * (box.width - 60);
+  const y = 60 + Math.random() * (box.height - 90);
+  laser.dot.style.left = x + "px";
+  laser.dot.style.top = y + "px";
+
+  const catBox = $("cat-image").getBoundingClientRect();
+  setLook(x < catBox.left - box.left + catBox.width / 2 ? "left" : "right");
+
+  const progress = (Date.now() - laser.start) / (laser.seconds * 1000);
+  laser.moveTimer = setTimeout(moveDot, 1100 - 500 * Math.min(1, progress));
+}
+
+function catchDot() {
+  laser.caught += 1;
+  const plus = document.createElement("span");
+  plus.className = "laser-plus";
+  plus.textContent = "+1";
+  plus.style.left = laser.dot.style.left;
+  plus.style.top = laser.dot.style.top;
+  laser.area.append(plus);
+  setTimeout(() => plus.remove(), 700);
+  updateLaserScore(); // may end the round if time is up
+  if (laser) moveDot();
+}
+
+function endLaserGame() {
+  if (!laser) return;
+  clearTimeout(laser.moveTimer);
+  clearInterval(laser.clock);
+  laser.area.remove();
+  lastLaserCatches = laser.caught;
+  laser = null;
+  lookDirection = null;
+  doAction("laserDone");
+}
+
 // ---------- Wiring up buttons and the settings form ----------
+
+$("laser-button").addEventListener("click", startLaserGame);
 
 document.querySelectorAll("[data-action]").forEach((button) => {
   button.addEventListener("click", () => doAction(button.dataset.action));
