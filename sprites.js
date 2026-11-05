@@ -1,5 +1,6 @@
 // Pixel-art cat sprites, drawn in the browser so the cat can have any color and coat.
-// Letters: K outline, Y fur, O stripes, L light fur (face/belly/paws), E eyes, C closed/X eyes,
+// Letters: K outline, Y fur, O stripes, L light fur (face/belly/paws), E/F iris of the left/right
+// eye, D pupil, C closed/X eyes,
 // P pink, B tear, R/r/w ball and anger mark. Regions are [x0, y0, x1, y1] boxes used by
 // coats like Colorpoint and Van.
 
@@ -12,8 +13,8 @@ const SPRITES = {
       ".KYYYYKKKKKYYYYK......",
       "KYYYYYOYYYOYYYYYK.....",
       "KYYYYYYOYOYYYYYYK.....",
-      "KYYYEEYYYYYEEYYYK.....",
-      "KYYYEEYYYYYEEYYYK.....",
+      "KYYYEDYYYYYDFYYYK.....",
+      "KYYYEDYYYYYDFYYYK.....",
       "KYLLLLLLKLLLLLLYK.....",
       "KLPPLLLPPPLLLPPLK.....",
       ".KLLLLLLLLLLLLLK......",
@@ -42,7 +43,7 @@ const SPRITES = {
       "KYYYYYOYYYOYYYYYK.R.R.",
       "KYYKKYYOYOYYKKYYK.....",
       "KYYYYKKYYYKKYYYYK.....",
-      "KYYYEEYYYYYEEYYYK.....",
+      "KYYYEDYYYYYDFYYYK.....",
       "KYLLLLLLPLLLLLLYK.....",
       "KLLLLLLKKKLLLLLLK.....",
       ".KLLLLKLLLKLLLLK......",
@@ -74,8 +75,8 @@ const SPRITES = {
       "......KYPYKKKKYPYK...............KYOK..",
       ".....KYYYYOYYOYYYYKKKKKKKKKKKKKKKYYK...",
       ".....KYYYYYOOYYYYYYKYYOYYYOYYYOYYYK....",
-      ".....KYYEEYYYYEEYYYKYOYYYOYYYOYYYYK....",
-      ".....KYYEEYYYYEEYYYYYYYYOYYYOYYYOYK....",
+      ".....KYYEDYYYYDFYYYKYOYYYOYYYOYYYYK....",
+      ".....KYYEDYYYYDFYYYYYYYYOYYYOYYYOYK....",
       ".....KLLLLLLKLLLLLLYYOYYYYYYYYYYYYK....",
       ".....KLPPLLPPPLLPPLYYYYYOYYYOYYYOYK....",
       "..KK..KLLLLLLLLLLLKYYYYYYYYYYYYYYYK....",
@@ -103,8 +104,8 @@ const SPRITES = {
       "..KYYYYOYOYYYYK.........KYK..",
       ".KYYYYYYOYYYYYYK........KYK..",
       ".KYKKKYYYYYKKKYK........KYK..",
-      ".KYYYEYYYYYEYYYK.......KYK...",
-      ".KYBYEYYYYYEYYYKKKKKKKKKKK...",
+      ".KYYYEYYYYYFYYYK.......KYK...",
+      ".KYBYDYYYYYDYYYKKKKKKKKKKK...",
       ".KLBLLLLKLLLLLLYYYOYYYOYYK...",
       ".KLPPLLLPLLLLPPKYOYYYOYYYK...",
       "..KLLLLLKLLLLLKYYYYOYYYOYK...",
@@ -163,14 +164,14 @@ const SPRITES = {
 // ---------- Colors and coats ----------
 
 // fur: main color, dark: stripes/shading, light: face and belly, outline: edges,
-// eyes: open eyes, closedEyes: sleeping eyes and the X eyes on game over.
+// closedEyes: sleeping eyes and the X eyes on game over.
 const CAT_COLORS = {
-  orange: { label: "Orange", fur: "#f8c430", dark: "#e08018", light: "#ffeca8", outline: "#5c1e0e", eyes: "#5c1e0e", closedEyes: "#5c1e0e" },
-  gray:   { label: "Gray",   fur: "#a9a9b6", dark: "#7a7a8c", light: "#e4e4ec", outline: "#2f2f3a", eyes: "#2f2f3a", closedEyes: "#2f2f3a" },
-  black:  { label: "Black",  fur: "#3c3c46", dark: "#26262e", light: "#6a6a78", outline: "#111116", eyes: "#e8d040", closedEyes: "#9a9aa8" },
-  white:  { label: "White",  fur: "#f4f4f4", dark: "#d6d6de", light: "#ffffff", outline: "#4a3a3a", eyes: "#4a3a3a", closedEyes: "#4a3a3a" },
-  beige:  { label: "Beige",  fur: "#e8d0a8", dark: "#c8a674", light: "#fff4e0", outline: "#5c3e22", eyes: "#5c3e22", closedEyes: "#5c3e22" },
-  brown:  { label: "Brown",  fur: "#9c6438", dark: "#6e4020", light: "#e0b890", outline: "#3a1a0a", eyes: "#3a1a0a", closedEyes: "#3a1a0a" },
+  orange: { label: "Orange", fur: "#f8c430", dark: "#e08018", light: "#ffeca8", outline: "#5c1e0e", closedEyes: "#5c1e0e" },
+  gray:   { label: "Gray",   fur: "#a9a9b6", dark: "#7a7a8c", light: "#e4e4ec", outline: "#2f2f3a", closedEyes: "#2f2f3a" },
+  black:  { label: "Black",  fur: "#3c3c46", dark: "#26262e", light: "#6a6a78", outline: "#111116", closedEyes: "#9a9aa8" },
+  white:  { label: "White",  fur: "#f4f4f4", dark: "#d6d6de", light: "#ffffff", outline: "#4a3a3a", closedEyes: "#4a3a3a" },
+  beige:  { label: "Beige",  fur: "#e8d0a8", dark: "#c8a674", light: "#fff4e0", outline: "#5c3e22", closedEyes: "#5c3e22" },
+  brown:  { label: "Brown",  fur: "#9c6438", dark: "#6e4020", light: "#e0b890", outline: "#3a1a0a", closedEyes: "#3a1a0a" },
 };
 
 const CAT_COATS = {
@@ -182,6 +183,50 @@ const CAT_COATS = {
   calico: "Calico",
   colorpoint: "Colorpoint (Siamese)",
   van: "Van",
+};
+
+// Eye colors: left and right are the eyes on the viewer's left and right.
+// pupil is optional; without it the pupil uses the cat's outline color.
+const EYE_HUES = {
+  darkBlue: "#1f4fa8",
+  blue: "#3c8ce6",
+  lightBlue: "#9ccff5",
+  darkBrown: "#5a3418",
+  brown: "#8a5a2b",
+  lightBrown: "#c0915a",
+  black: "#1e1a1a",
+  grey: "#8c8c96",
+  lightPink: "#f5b8c8",
+  darkGreen: "#2f7a32",
+  green: "#4caf50",
+  lightGreen: "#a5e08a",
+  amber: "#e0961c",
+  yellow: "#f2d530",
+};
+
+const CAT_EYES = {
+  black: { label: "Black", left: EYE_HUES.black, right: EYE_HUES.black },
+  darkBlue: { label: "Dark blue", left: EYE_HUES.darkBlue, right: EYE_HUES.darkBlue },
+  blue: { label: "Blue", left: EYE_HUES.blue, right: EYE_HUES.blue },
+  lightBlue: { label: "Light blue", left: EYE_HUES.lightBlue, right: EYE_HUES.lightBlue },
+  darkBrown: { label: "Dark brown", left: EYE_HUES.darkBrown, right: EYE_HUES.darkBrown },
+  brown: { label: "Brown", left: EYE_HUES.brown, right: EYE_HUES.brown },
+  lightBrown: { label: "Light brown", left: EYE_HUES.lightBrown, right: EYE_HUES.lightBrown },
+  grey: { label: "Grey", left: EYE_HUES.grey, right: EYE_HUES.grey },
+  lightPink: { label: "Light pink", left: EYE_HUES.lightPink, right: EYE_HUES.lightPink },
+  darkGreen: { label: "Dark green", left: EYE_HUES.darkGreen, right: EYE_HUES.darkGreen },
+  green: { label: "Green", left: EYE_HUES.green, right: EYE_HUES.green },
+  lightGreen: { label: "Light green", left: EYE_HUES.lightGreen, right: EYE_HUES.lightGreen },
+  amber: { label: "Amber", left: EYE_HUES.amber, right: EYE_HUES.amber },
+  yellow: { label: "Yellow", left: EYE_HUES.yellow, right: EYE_HUES.yellow },
+  blueBrown: { label: "Heterochromia (blue + brown)", left: EYE_HUES.blue, right: EYE_HUES.brown },
+  blueYellow: { label: "Heterochromia (blue + yellow)", left: EYE_HUES.blue, right: EYE_HUES.yellow },
+  blueGreen: { label: "Heterochromia (blue + green)", left: EYE_HUES.blue, right: EYE_HUES.green },
+  brownGreen: { label: "Heterochromia (brown + green)", left: EYE_HUES.brown, right: EYE_HUES.green },
+  brownYellow: { label: "Heterochromia (brown + yellow)", left: EYE_HUES.brown, right: EYE_HUES.yellow },
+  yellowGreen: { label: "Heterochromia (yellow + green)", left: EYE_HUES.yellow, right: EYE_HUES.green },
+  // Blind eyes are cloudy and pale, with only a faint pupil.
+  blind: { label: "Blind (cloudy)", left: "#dde8f0", right: "#dde8f0", pupil: "#c2d2de" },
 };
 
 // Colors that never change with the cat's color.
@@ -259,14 +304,15 @@ function furColor(letter, x, y, color, coat, regions) {
 
 const spriteCache = {};
 
-// Returns an image URL of the sprite in the given color and coat.
-function drawCat(spriteName, colorName, coatName) {
-  const key = spriteName + "/" + colorName + "/" + coatName;
+// Returns an image URL of the sprite in the given color, coat and eye color.
+function drawCat(spriteName, colorName, coatName, eyesName) {
+  const key = [spriteName, colorName, coatName, eyesName].join("/");
   if (spriteCache[key]) return spriteCache[key];
 
   const sprite = SPRITES[spriteName];
   const color = CAT_COLORS[colorName] || CAT_COLORS.orange;
   const coat = coatName in CAT_COATS ? coatName : "solid";
+  const eyes = CAT_EYES[eyesName] || CAT_EYES.black;
 
   const canvas = document.createElement("canvas");
   canvas.width = sprite.art[0].length * SCALE;
@@ -278,7 +324,9 @@ function drawCat(spriteName, colorName, coatName) {
       let fill;
       if (letter === ".") return;
       else if (letter === "K") fill = color.outline;
-      else if (letter === "E") fill = color.eyes;
+      else if (letter === "E") fill = eyes.left;
+      else if (letter === "F") fill = eyes.right;
+      else if (letter === "D") fill = eyes.pupil || color.outline;
       else if (letter === "C") fill = color.closedEyes;
       else if ("YOL".includes(letter)) fill = furColor(letter, x, y, color, coat, sprite.regions);
       else fill = FIXED_COLORS[letter];

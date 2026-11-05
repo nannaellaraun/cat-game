@@ -38,6 +38,7 @@ function loadState() {
     gender: "none",
     color: "orange",
     coat: "solid",
+    eyes: "black",
     ...startingStats("Cat"),
   };
   try {
@@ -205,8 +206,8 @@ function render() {
   $("message").textContent = cat.message;
   $("lives-value").textContent = cat.lives;
   $("hearts").textContent = "❤️".repeat(cat.lives) + "💔️".repeat(3 - cat.lives);
-  $("cat-image").src = drawCat(chooseImage(moodNames), cat.color, cat.coat);
-  $("game-over-image").src = drawCat("gameOver", cat.color, cat.coat);
+  $("cat-image").src = drawCat(chooseImage(moodNames), cat.color, cat.coat, cat.eyes);
+  $("game-over-image").src = drawCat("gameOver", cat.color, cat.coat, cat.eyes);
 }
 
 // ---------- Wiring up buttons and the settings form ----------
@@ -222,16 +223,18 @@ nameInput.value = cat.name;
 ageInput.value = cat.age;
 genderInput.value = cat.gender in PRONOUNS ? cat.gender : "none";
 
-// Fill the Color and Coat dropdowns from the lists in sprites.js.
+// Fill the Color, Coat and Eye color dropdowns from the lists in sprites.js.
 const colorInput = $("color-input");
 const coatInput = $("coat-input");
-for (const [select, options] of [[colorInput, CAT_COLORS], [coatInput, CAT_COATS]]) {
+const eyesInput = $("eyes-input");
+for (const [select, options] of [[colorInput, CAT_COLORS], [coatInput, CAT_COATS], [eyesInput, CAT_EYES]]) {
   for (const [value, info] of Object.entries(options)) {
     select.add(new Option(info.label || info, value));
   }
 }
 colorInput.value = cat.color in CAT_COLORS ? cat.color : "orange";
 coatInput.value = cat.coat in CAT_COATS ? cat.coat : "solid";
+eyesInput.value = cat.eyes in CAT_EYES ? cat.eyes : "black";
 
 $("settings-form").addEventListener("submit", (event) => {
   event.preventDefault(); // stay on the page instead of reloading it
@@ -244,6 +247,7 @@ $("settings-form").addEventListener("submit", (event) => {
     cat.gender = genderInput.value in PRONOUNS ? genderInput.value : "none";
     cat.color = colorInput.value in CAT_COLORS ? colorInput.value : "orange";
     cat.coat = coatInput.value in CAT_COATS ? coatInput.value : "solid";
+    cat.eyes = eyesInput.value in CAT_EYES ? eyesInput.value : "black";
     cat.message = "Settings saved!";
   } else {
     cat.message = "Please enter a name and an age from 0 to 30.";
