@@ -37,6 +37,10 @@ h1 {
   background: #4A8AA1;
   height: 100%;
 }
+.cleanliness {
+  background: #9b7fc4;
+  height: 100%;
+}
 .bar > div {
   transition: width 0.3s;
 }
@@ -139,4 +143,25 @@ button:hover {
 }
 #settings-error:empty {
   display: none;
+}
+
+/* Birthday confetti: little squares falling over the card */
+.confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: 20px;
+}
+.confetti i {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 8px;
+  animation: confetti-fall linear forwards;
+}
+@keyframes confetti-fall {
+  to {
+    transform: translateY(110vh) rotate(540deg);
+  }
 }

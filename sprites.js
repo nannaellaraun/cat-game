@@ -33,6 +33,7 @@ const SPRITES = {
       "..KKKKKKKKKKKKKK......",
     ],
     regions: {ears: [[0, 0, 6, 3], [10, 0, 16, 3]], mask: [[5, 7, 11, 10]], tail: [[15, 14, 21, 21]], paws: [[0, 21, 14, 22]]},
+    hat: [8, 2], // party hat: middle column and bottom row
   },
   angry: {
     art: [
@@ -62,6 +63,7 @@ const SPRITES = {
       "..KKKKKKKKKKKKKK......",
     ],
     regions: {ears: [[0, 0, 6, 3], [10, 0, 16, 3]], mask: [[5, 7, 11, 10]], tail: [[15, 14, 21, 21]], paws: [[0, 21, 14, 22]]},
+    hat: [8, 2], // party hat: middle column and bottom row
   },
   playing: {
     art: [
@@ -88,6 +90,7 @@ const SPRITES = {
       "..KK...................................",
     ],
     regions: {ears: [[6, 5, 10, 7], [14, 5, 18, 7]], mask: [[9, 11, 15, 13]], tail: [[33, 0, 38, 8]], paws: [[7, 16, 18, 17], [27, 16, 34, 17]]},
+    hat: [12, 6], // party hat: middle column and bottom row
   },
   sad: {
     art: [
@@ -117,6 +120,7 @@ const SPRITES = {
       ".......KKKK..........KKKK....",
     ],
     regions: {ears: [[0, 7, 6, 9], [10, 7, 16, 9]], mask: [[5, 14, 11, 17]], tail: [[22, 0, 27, 13]], paws: [[7, 22, 10, 22], [21, 22, 24, 22]]},
+    hat: [8, 8], // party hat: middle column and bottom row
   },
   sleepy: {
     art: [
@@ -137,6 +141,7 @@ const SPRITES = {
       "..........KKKKKKKKKKKKKKK.......",
     ],
     regions: {ears: [[0, 0, 4, 2], [8, 0, 12, 2]], mask: [[5, 7, 9, 9]], tail: [[11, 12, 24, 13]], paws: [[2, 11, 10, 12]]},
+    hat: [6, 1], // party hat: middle column and bottom row
   },
   gameOver: {
     art: [
@@ -248,14 +253,16 @@ function mix(a, b, amount) {
   return "#" + parts.map((n) => n.toString(16).padStart(2, "0")).join("");
 }
 
+// A fixed pseudo-random number for a pair of numbers, so patterns look random but never change.
+function hash2(a, b) {
+  let hash = Math.imul(a, 374761393) + Math.imul(b, 668265263);
+  hash = Math.imul(hash ^ (hash >>> 13), 1274126177);
+  return (hash ^ (hash >>> 16)) >>> 0;
+}
+
 // Patches for tortoiseshell and calico: the same 3x3 blocks always get the same color.
 function patch(x, y, choices) {
-  const bx = Math.floor(x / 3);
-  const by = Math.floor(y / 3);
-  let hash = Math.imul(bx, 374761393) + Math.imul(by, 668265263);
-  hash = Math.imul(hash ^ (hash >>> 13), 1274126177);
-  hash = (hash ^ (hash >>> 16)) >>> 0;
-  return choices[hash % choices.length];
+  return choices[hash2(Math.floor(x / 3), Math.floor(y / 3)) % choices.length];
 }
 
 function inRegion(regions, names, x, y) {
@@ -302,33 +309,83 @@ function furColor(letter, x, y, color, coat, regions) {
   }
 }
 
+// Birthday party hat, drawn on top of the cat's head.
+// h hat, s stripe, p pompom, K outline.
+const PARTY_HAT = [
+  "..p..",
+  ".KhK.",
+  ".KsK.",
+  "KhhhK",
+  "KsssK",
+];
+const HAT_COLORS = { h: "#4aa8e0", s: "#f2d530", p: "#e84a8a" };
+const DIRT = "#6b4a2a";
+
+// Messy fur: little tufts sticking out of the outline (T) and dirt spots on the fur (X).
+function makeMessy(grid) {
+  const at = (x, y) => (grid[y] && grid[y][x]) || ".";
+  const isFur = (c) => "YOLEFD".includes(c);
+  const touchesFur = (x, y) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => isFur(at(x + dx, y + dy)));
+  grid.forEach((row, y) => {
+    row.forEach((c, x) => {
+      const nextToCat = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(
+        ([dx, dy]) => at(x + dx, y + dy) === "K" && touchesFur(x + dx, y + dy)
+      );
+      if (c === "." && nextToCat && hash2(x, y) % 3 === 0) row[x] = "T";
+      else if ((c === "Y" || c === "O") && hash2(y, x) % 9 === 0) row[x] = "X";
+    });
+  });
+}
+
 const spriteCache = {};
 
 // Returns an image URL of the sprite in the given color, coat and eye color.
-function drawCat(spriteName, colorName, coatName, eyesName) {
-  const key = [spriteName, colorName, coatName, eyesName].join("/");
+// Options: hat (birthday party hat), messy (tufts and dirt when the cat needs brushing).
+function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
+  const sprite = SPRITES[spriteName];
+  const hat = Boolean(options.hat && sprite.hat);
+  const messy = Boolean(options.messy);
+  const key = [spriteName, colorName, coatName, eyesName, hat, messy].join("/");
   if (spriteCache[key]) return spriteCache[key];
 
-  const sprite = SPRITES[spriteName];
   const color = CAT_COLORS[colorName] || CAT_COLORS.orange;
   const coat = coatName in CAT_COATS ? coatName : "solid";
   const eyes = CAT_EYES[eyesName] || CAT_EYES.black;
 
+  const grid = sprite.art.map((row) => [...row]);
+  if (messy) makeMessy(grid);
+
+  // Room above the sprite if the hat sticks out over the top.
+  let top = 0;
+  if (hat) {
+    const [middle, bottom] = sprite.hat;
+    const hatTop = bottom - PARTY_HAT.length + 1;
+    top = Math.max(0, -hatTop);
+    for (let i = 0; i < top; i++) grid.unshift(Array(grid[0].length).fill("."));
+    PARTY_HAT.forEach((row, i) => {
+      [...row].forEach((c, j) => {
+        if (c !== ".") grid[hatTop + top + i][middle - 2 + j] = "hat:" + c;
+      });
+    });
+  }
+
   const canvas = document.createElement("canvas");
-  canvas.width = sprite.art[0].length * SCALE;
-  canvas.height = sprite.art.length * SCALE;
+  canvas.width = grid[0].length * SCALE;
+  canvas.height = grid.length * SCALE;
   const ctx = canvas.getContext("2d");
 
-  sprite.art.forEach((row, y) => {
-    [...row].forEach((letter, x) => {
+  grid.forEach((row, y) => {
+    row.forEach((letter, x) => {
       let fill;
       if (letter === ".") return;
-      else if (letter === "K") fill = color.outline;
+      else if (letter === "K" || letter === "T" || letter === "hat:K") fill = color.outline;
+      else if (letter.startsWith("hat:")) fill = HAT_COLORS[letter.slice(4)];
+      else if (letter === "X") fill = mix(furColor("Y", x, y - top, color, coat, sprite.regions), DIRT, 0.55);
       else if (letter === "E") fill = eyes.left;
       else if (letter === "F") fill = eyes.right;
       else if (letter === "D") fill = eyes.pupil || color.outline;
       else if (letter === "C") fill = color.closedEyes;
-      else if ("YOL".includes(letter)) fill = furColor(letter, x, y, color, coat, sprite.regions);
+      else if ("YOL".includes(letter)) fill = furColor(letter, x, y - top, color, coat, sprite.regions);
       else fill = FIXED_COLORS[letter];
       ctx.fillStyle = fill;
       ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);

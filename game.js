@@ -15,6 +15,9 @@ const PRONOUNS = {
 
 const PETS_BEFORE_ANGRY = 5; // the 6th pet in a row annoys the cat
 const CALM_DOWN_MS = 10 * 1000; // an angry cat calms down after 10 seconds of no petting
+const BIRTHDAY_MS = 7 * 24 * 60 * 60 * 1000; // the cat has a birthday every 7 days
+const MAX_AGE = 30; // same limit as Cat Settings
+const MESSY_AT = 30; // at this cleanliness or lower the cat looks messy
 
 // ---------- State ----------
 
@@ -23,6 +26,7 @@ function startingStats(name) {
     hunger: 40,
     happiness: 70,
     energy: 90,
+    cleanliness: 90,
     lives: 3,
     activity: "neutral",
     petStreak: 0, // how many times in a row the cat has been petted
@@ -39,6 +43,8 @@ function loadState() {
     color: "orange",
     coat: "solid",
     eyes: "black",
+    lastBirthday: Date.now(), // the next birthday is 7 days after this
+    partyUntil: 0, // the party hat is worn until this time (end of the birthday)
     ...startingStats("Cat"),
   };
   try {
@@ -82,6 +88,7 @@ const actions = {
     cat.happiness = up(cat.happiness, 15);
     cat.energy = down(cat.energy, 5);
     cat.hunger = up(cat.hunger, 5);
+    cat.cleanliness = down(cat.cleanliness, 10);
     cat.message = cat.name + " is playing with " + pronoun().possessive + " ball!";
   },
   sleep() {
@@ -106,6 +113,12 @@ const actions = {
       cat.message = cat.name + " purrs and swishes " + pronoun().possessive + " tail.";
     }
   },
+  brush() {
+    cat.activity = "neutral";
+    cat.cleanliness = up(cat.cleanliness, 30);
+    cat.happiness = up(cat.happiness, 5);
+    cat.message = cat.name + " loves being brushed. Look at " + pronoun().possessive + " shiny fur!";
+  },
   meow() {
     cat.activity = "neutral";
     cat.happiness = up(cat.happiness, 5);
@@ -118,14 +131,67 @@ const actions = {
     cat.hunger = up(cat.hunger, 2);
     cat.happiness = down(cat.happiness, 2);
     cat.energy = down(cat.energy, 2);
+    cat.cleanliness = down(cat.cleanliness, 2);
+    checkBirthday();
   },
 };
+
+// ---------- Birthdays ----------
+
+const isPartyTime = () => Date.now() < cat.partyUntil;
+
+// Every 7 days the cat turns a year older (up to MAX_AGE) and gets a party for the rest of the day.
+function checkBirthday() {
+  let birthday = false;
+  let grewUp = false;
+  while (Date.now() - cat.lastBirthday >= BIRTHDAY_MS) {
+    cat.lastBirthday += BIRTHDAY_MS;
+    birthday = true;
+    if (cat.age < MAX_AGE) {
+      cat.age += 1;
+      grewUp = true;
+    }
+  }
+  if (!birthday) return;
+
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0);
+  cat.partyUntil = midnight.getTime();
+  cat.message = "🎂 Happy birthday, " + cat.name + "!";
+  if (grewUp) cat.message += " " + cat.name + " turned " + cat.age + "!";
+  showConfetti();
+}
+
+// Pixel confetti falling over the card for a few seconds.
+let confettiShown = false;
+function showConfetti() {
+  confettiShown = true;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = document.createElement("div");
+  box.className = "confetti";
+  const colors = ["#e84a8a", "#4aa8e0", "#f2d530", "#4caf50", "#e0961c"];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement("i");
+    piece.style.left = Math.random() * 100 + "%";
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDelay = Math.random() * 1.5 + "s";
+    piece.style.animationDuration = 2 + Math.random() * 1.5 + "s";
+    box.append(piece);
+  }
+  document.querySelector(".game").append(box);
+  setTimeout(() => box.remove(), 5000);
+}
 
 // Rules that run after every action, like the bottom half of the PHP script.
 function applyRules() {
   // A very hungry cat gets sadder
   if (cat.hunger > 80) {
     cat.happiness = down(cat.happiness, 15);
+  }
+
+  // A dirty cat is a bit grumpy
+  if (cat.cleanliness <= 20) {
+    cat.happiness = down(cat.happiness, 5);
   }
 
   // Lose a life when everything is at rock bottom
@@ -169,6 +235,8 @@ function getMoods() {
   if (cat.happiness <= 20) moods.push(["Sad", "💙️"]);
   if (cat.happiness >= 80) moods.push(["Very happy", "❤️"]);
   if (cat.energy <= 20) moods.push(["Sleepy", "💤️"]);
+  if (cat.cleanliness <= MESSY_AT) moods.push(["Messy", "🛁"]);
+  if (isPartyTime()) moods.push(["Birthday", "🎂"]);
   if (cat.happiness >= 30 && cat.happiness <= 70) moods.push(["Neutral", "☁️"]);
   return moods;
 }
@@ -198,7 +266,7 @@ function render() {
   $("mood").textContent = moodNames.join(", ");
   $("emoji").textContent = moods.map((m) => m[1]).join(", ");
 
-  for (const stat of ["hunger", "happiness", "energy"]) {
+  for (const stat of ["hunger", "happiness", "energy", "cleanliness"]) {
     $(stat + "-value").textContent = cat[stat];
     $(stat + "-bar").style.width = cat[stat] + "%";
   }
@@ -206,7 +274,10 @@ function render() {
   $("message").textContent = cat.message;
   $("lives-value").textContent = cat.lives;
   $("hearts").textContent = "❤️".repeat(cat.lives) + "💔️".repeat(3 - cat.lives);
-  $("cat-image").src = drawCat(chooseImage(moodNames), cat.color, cat.coat, cat.eyes);
+  $("cat-image").src = drawCat(chooseImage(moodNames), cat.color, cat.coat, cat.eyes, {
+    hat: isPartyTime(),
+    messy: cat.cleanliness <= MESSY_AT,
+  });
   $("game-over-image").src = drawCat("gameOver", cat.color, cat.coat, cat.eyes);
 }
 
@@ -275,6 +346,9 @@ $("settings-form").addEventListener("submit", (event) => {
 
 // Opening the page counts as time passing.
 doAction("timePassed");
+
+// Opening the game on the birthday shows the confetti again.
+if (isPartyTime() && !confettiShown) showConfetti();
 
 // If the page was closed while the cat was angry, let it calm down.
 if (cat.activity === "angry") scheduleCalmDown();
