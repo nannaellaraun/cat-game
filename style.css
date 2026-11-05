@@ -64,3 +64,34 @@ button:hover {
   font-size: 30px;
   font-weight: bold;
 }
+
+/* Cat Settings: one setting per line, all fields look the same */
+.setting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+.setting label {
+  flex: 0 0 9em;
+}
+.setting input,
+.setting select {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 2.2em;
+  padding: 0 8px;
+  font-family: inherit;
+  font-size: 1em;
+  color: inherit;
+  background: white;
+  border: 2px solid #b58b70;
+  border-radius: 8px;
+}
+.setting input:focus,
+.setting select:focus {
+  outline: none;
+  border-color: #87634c;
+}
