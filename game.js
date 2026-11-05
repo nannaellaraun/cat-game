@@ -184,6 +184,7 @@ const actions = {
       cat.activity = "neutral";
       cat.happiness = up(cat.happiness, 5);
       cat.message = cat.name + " purrs and swishes " + pronoun().possessive + " tail.";
+      nextAnimation = "pet";
     }
   },
   bellyRub() {
@@ -191,6 +192,7 @@ const actions = {
     cat.activity = "neutral";
     cat.happiness = up(cat.happiness, 10);
     cat.message = cat.name + " rolls over and purrs. Belly rubs are the best!";
+    nextAnimation = "belly";
   },
   brush() {
     if (Math.random() < traits().brushScratchChance) return scratch();
@@ -330,6 +332,7 @@ function scheduleCalmDown() {
 }
 
 function doAction(name) {
+  if (name !== "timePassed") stopAnimation();
   // Doing anything else breaks the petting streak; time passing doesn't.
   if (name !== "pet" && name !== "timePassed") cat.petStreak = 0;
   actions[name]();
@@ -340,6 +343,8 @@ function doAction(name) {
   applyRules();
   saveState();
   render();
+  if (nextAnimation) playAnimation(nextAnimation);
+  nextAnimation = null;
 }
 
 // ---------- Drawing the page ----------
@@ -394,7 +399,8 @@ function render() {
   const look = { hat: isPartyTime(), messy: cat.cleanliness <= MESSY_AT };
   const draw = (extra) => drawCat(sprite, cat.color, cat.coat, cat.eyes, { ...look, ...extra });
   catFrames = { normal: draw(), blink: draw({ blink: true }), tail: draw({ tail: true }) };
-  $("cat-image").src = catFrames.normal;
+  catLook = look;
+  if (!animation) $("cat-image").src = catFrames.normal;
   $("game-over-image").src = drawCat("gameOver", cat.color, cat.coat, cat.eyes);
 }
 
@@ -403,8 +409,66 @@ function render() {
 // The cat blinks now and then and swishes its tail every few seconds.
 // (Breathing is a CSS animation in style.css.)
 let catFrames = {};
-const showFrame = (name) => ($("cat-image").src = catFrames[name]);
+let catLook = {};
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const showFrame = (name) => {
+  if (!animation) $("cat-image").src = catFrames[name];
+};
 const randomBetween = (min, max) => min + Math.random() * (max - min);
+
+// Petting and belly rubs play a short animation, then the cat goes back to normal.
+let nextAnimation = null; // set by an action, played after the page is drawn
+let animation = null; // the animation playing right now
+
+// Each animation is a list of pictures shown one after another: [sprite, extra drawing options, milliseconds].
+const repeat = (steps, times) => Array.from({ length: times }, () => steps).flat();
+
+const ANIMATIONS = {
+  // happy ^ ^ eyes and a fast tail swish
+  pet: {
+    still: ["neutral", { happy: true }],
+    steps: repeat([["neutral", { happy: true, tail: true }, 200], ["neutral", { happy: true }, 200]], 5),
+  },
+  // lies down, rolls onto its back, then rolls back and sits up
+  belly: {
+    still: ["belly", {}],
+    steps: [
+      ["sleepy", {}, 300],
+      ["belly", {}, 2400],
+      ["sleepy", {}, 300],
+      ["neutral", {}, 250],
+    ],
+  },
+};
+
+function playAnimation(name) {
+  stopAnimation();
+  const { still, steps } = ANIMATIONS[name];
+  const draw = ([sprite, extra]) => drawCat(sprite, cat.color, cat.coat, cat.eyes, { ...catLook, ...extra });
+  const image = $("cat-image");
+  const length = steps.reduce((sum, step) => sum + step[2], 0);
+  animation = { timers: [] };
+
+  if (reducedMotion) {
+    // With reduced motion the main picture stays still for the same time.
+    image.src = draw(still);
+  } else {
+    let at = 0;
+    for (const step of steps) {
+      const url = draw(step);
+      animation.timers.push(setTimeout(() => (image.src = url), at));
+      at += step[2];
+    }
+  }
+  animation.timers.push(setTimeout(stopAnimation, length));
+}
+
+function stopAnimation() {
+  if (!animation) return;
+  animation.timers.forEach(clearTimeout);
+  animation = null;
+  $("cat-image").src = catFrames.normal;
+}
 
 function blinkLoop() {
   setTimeout(() => {
@@ -423,7 +487,7 @@ function tailLoop() {
   }, randomBetween(4000, 8000));
 }
 
-if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+if (!reducedMotion) {
   blinkLoop();
   tailLoop();
 }

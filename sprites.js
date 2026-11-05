@@ -34,6 +34,7 @@ const SPRITES = {
     ],
     regions: {ears: [[0, 0, 6, 3], [10, 0, 16, 3]], mask: [[5, 7, 11, 10]], tail: [[15, 14, 21, 21]], paws: [[0, 21, 14, 22]]},
     hat: [8, 2], // party hat: middle column and bottom row
+    happyEyes: [[3, 7], [4, 6], [5, 7], [11, 7], [12, 6], [13, 7]], // ^ ^ when petted
   },
   angry: {
     art: [
@@ -172,6 +173,27 @@ const SPRITES = {
     ],
     regions: {ears: [[0, 0, 4, 2], [8, 0, 12, 2]], mask: [[5, 7, 9, 9]], tail: [[11, 12, 24, 13]], paws: [[2, 11, 10, 12]]},
     hat: [6, 1], // party hat: middle column and bottom row
+  },
+  belly: {
+    art: [
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      "...............KK...KK..KK..KK.......",
+      "..KKKKKKKKKK..KLLK.KLLKKLLKKLLK..KK..",
+      ".KLLLLLLLLLLK.KYYK.KYYKKYYKKYYK.KYYK.",
+      "KLPPLLKKKLLPPKKYYK.KYYKKYYKKYYK.KYOK.",
+      "KLLLLLLKLLLLLKKYYKKKYYKKYYKKYYK.KYYK.",
+      "KYCYCYYYYCYCYLLLLLLLLLLLLLLLLLK.KYOK.",
+      "KYYCYYYYYYCYYLLLLLLLLLLLLLLLLLLKKYYK.",
+      "KYYYYOOYYYYYKLLLLLLLLLLLLLLLLLLKKYOK.",
+      "KYYYOYYOYYYYKYYOYYYOYYYOYYYOYYYYYYYK.",
+      "KYPYKKKKKYPYKYOYYYOYYYOYYYOYYYYKKKK..",
+      "KYYK....KYYKKYYYYYYYYYYYYYYYYYK......",
+      ".KK......KK.KKKKKKKKKKKKKKKKKK.......",
+    ],
+    regions: {ears: [[0, 13, 4, 15], [8, 13, 12, 15]], mask: [[5, 6, 9, 9]], tail: [[32, 5, 35, 12]], paws: [[14, 4, 31, 5]]},
   },
   gameOver: {
     art: [
@@ -362,6 +384,14 @@ function closeEyes(grid) {
   });
 }
 
+// Happy eyes: the open eyes become ^ ^ arcs (only for sprites that list happyEyes).
+function happyEyes(grid, cells) {
+  grid.forEach((row) => row.forEach((c, x) => {
+    if (c === "E" || c === "F" || c === "D") row[x] = "Y";
+  }));
+  for (const [x, y] of cells) grid[y][x] = "C";
+}
+
 // Tail swish: the upper part of the tail moves one pixel sideways.
 // Only the tail's own pixels move (not the body outline at the edge of the tail box).
 function swishTail(grid, regions) {
@@ -400,14 +430,15 @@ const spriteCache = {};
 
 // Returns an image URL of the sprite in the given color, coat and eye color.
 // Options: hat (birthday party hat), messy (tufts and dirt when the cat needs brushing),
-// blink (eyes closed) and tail (tail swished to the side) for the animation frames.
+// blink (eyes closed), tail (tail swished to the side) and happy (^ ^ eyes) for the animation frames.
 function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
   const sprite = SPRITES[spriteName];
   const hat = Boolean(options.hat && sprite.hat);
   const messy = Boolean(options.messy);
   const blink = Boolean(options.blink);
   const tail = Boolean(options.tail);
-  const key = [spriteName, colorName, coatName, eyesName, hat, messy, blink, tail].join("/");
+  const happy = Boolean(options.happy && sprite.happyEyes);
+  const key = [spriteName, colorName, coatName, eyesName, hat, messy, blink, tail, happy].join("/");
   if (spriteCache[key]) return spriteCache[key];
 
   const color = CAT_COLORS[colorName] || CAT_COLORS.orange;
@@ -415,7 +446,8 @@ function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
   const eyes = CAT_EYES[eyesName] || CAT_EYES.black;
 
   const grid = sprite.art.map((row) => [...row]);
-  if (blink) closeEyes(grid);
+  if (happy) happyEyes(grid, sprite.happyEyes);
+  else if (blink) closeEyes(grid);
   if (tail) swishTail(grid, sprite.regions);
   if (messy) makeMessy(grid);
 
