@@ -31,7 +31,7 @@
     <h3>Lives: <span id="lives-value"></span></h3>
     <p id="hearts"></p>
 
-    <img id="cat-image" src="neutral-happy-hungry.png" alt="Cat">
+    <img id="cat-image" alt="Cat">
 
     <div class="actions">
       <button data-action="feed">Feed <span class="name"></span></button>
@@ -46,7 +46,7 @@
   <!-- Shown when the cat has run out of lives -->
   <section id="game-over-view" hidden>
     <h1 class="game-over">GAME OVER</h1>
-    <img src="game-over.png" alt="Cat with X eyes">
+    <img id="game-over-image" alt="Cat with X eyes">
     <h2>💔️ <span class="name"></span> ran out of lives 💔️</h2>
     <button data-action="reset">Restart Game</button>
   </section>
@@ -69,10 +69,19 @@
         <option value="none">Not chosen</option>
       </select>
     </div>
+    <div class="setting">
+      <label for="color-input">Color:</label>
+      <select id="color-input"></select>
+    </div>
+    <div class="setting">
+      <label for="coat-input">Coat:</label>
+      <select id="coat-input"></select>
+    </div>
     <button type="submit">Save Settings</button>
   </form>
 
 </div>
+<script src="sprites.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

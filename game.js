@@ -4,13 +4,7 @@
 const STORAGE_KEY = "cat-game";
 const TICK_MS = 35 * 1000; // the PHP page refreshed itself every 35 seconds
 
-const IMAGES = {
-  neutral: "neutral-happy-hungry.png",
-  playing: "playing.png",
-  sad: "sad-losesaheart.png",
-  sleepy: "sleepy-sleeping.png",
-  angry: "angry.png",
-};
+// The cat pictures are drawn by sprites.js in the cat's chosen color and coat.
 
 // Pronouns for each gender choice in Cat Settings.
 const PRONOUNS = {
@@ -38,7 +32,14 @@ function startingStats(name) {
 }
 
 function loadState() {
-  const fresh = { name: "Cat", age: 0, gender: "none", ...startingStats("Cat") };
+  const fresh = {
+    name: "Cat",
+    age: 0,
+    gender: "none",
+    color: "orange",
+    coat: "solid",
+    ...startingStats("Cat"),
+  };
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     return saved ? { ...fresh, ...saved } : fresh;
@@ -172,12 +173,12 @@ function getMoods() {
 }
 
 function chooseImage(moodNames) {
-  if (cat.activity === "angry") return IMAGES.angry;
-  if (cat.activity === "playing") return IMAGES.playing;
-  if (cat.activity === "sleeping") return IMAGES.sleepy;
-  if (cat.lives < 3 || moodNames.includes("Sad")) return IMAGES.sad;
-  if (moodNames.includes("Sleepy")) return IMAGES.sleepy;
-  return IMAGES.neutral;
+  if (cat.activity === "angry") return "angry";
+  if (cat.activity === "playing") return "playing";
+  if (cat.activity === "sleeping") return "sleepy";
+  if (cat.lives < 3 || moodNames.includes("Sad")) return "sad";
+  if (moodNames.includes("Sleepy")) return "sleepy";
+  return "neutral";
 }
 
 const $ = (id) => document.getElementById(id);
@@ -204,7 +205,8 @@ function render() {
   $("message").textContent = cat.message;
   $("lives-value").textContent = cat.lives;
   $("hearts").textContent = "❤️".repeat(cat.lives) + "💔️".repeat(3 - cat.lives);
-  $("cat-image").src = chooseImage(moodNames);
+  $("cat-image").src = drawCat(chooseImage(moodNames), cat.color, cat.coat);
+  $("game-over-image").src = drawCat("gameOver", cat.color, cat.coat);
 }
 
 // ---------- Wiring up buttons and the settings form ----------
@@ -220,6 +222,17 @@ nameInput.value = cat.name;
 ageInput.value = cat.age;
 genderInput.value = cat.gender in PRONOUNS ? cat.gender : "none";
 
+// Fill the Color and Coat dropdowns from the lists in sprites.js.
+const colorInput = $("color-input");
+const coatInput = $("coat-input");
+for (const [select, options] of [[colorInput, CAT_COLORS], [coatInput, CAT_COATS]]) {
+  for (const [value, info] of Object.entries(options)) {
+    select.add(new Option(info.label || info, value));
+  }
+}
+colorInput.value = cat.color in CAT_COLORS ? cat.color : "orange";
+coatInput.value = cat.coat in CAT_COATS ? cat.coat : "solid";
+
 $("settings-form").addEventListener("submit", (event) => {
   event.preventDefault(); // stay on the page instead of reloading it
   const newName = nameInput.value.trim();
@@ -229,6 +242,8 @@ $("settings-form").addEventListener("submit", (event) => {
     cat.name = newName;
     cat.age = newAge;
     cat.gender = genderInput.value in PRONOUNS ? genderInput.value : "none";
+    cat.color = colorInput.value in CAT_COLORS ? colorInput.value : "orange";
+    cat.coat = coatInput.value in CAT_COATS ? coatInput.value : "solid";
     cat.message = "Settings saved!";
   } else {
     cat.message = "Please enter a name and an age from 0 to 30.";

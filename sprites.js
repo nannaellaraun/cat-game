@@ -1,0 +1,291 @@
+// Pixel-art cat sprites, drawn in the browser so the cat can have any color and coat.
+// Letters: K outline, Y fur, O stripes, L light fur (face/belly/paws), E eyes, C closed/X eyes,
+// P pink, B tear, R/r/w ball and anger mark. Regions are [x0, y0, x1, y1] boxes used by
+// coats like Colorpoint and Van.
+
+const SPRITES = {
+  neutral: {
+    art: [
+      "..KK.........KK.......",
+      ".KYYK.......KYYK......",
+      ".KYPYK.....KYPYK......",
+      ".KYYYYKKKKKYYYYK......",
+      "KYYYYYOYYYOYYYYYK.....",
+      "KYYYYYYOYOYYYYYYK.....",
+      "KYYYEEYYYYYEEYYYK.....",
+      "KYYYEEYYYYYEEYYYK.....",
+      "KYLLLLLLKLLLLLLYK.....",
+      "KLPPLLLPPPLLLPPLK.....",
+      ".KLLLLLLLLLLLLLK......",
+      "..KKYYYYYYYYYKK.......",
+      "...KYYOYYYOYYK........",
+      "..KYYYOYLYOYYYK.......",
+      "..KYOYYLLLYYOYK....KK.",
+      ".KYYYYLLLLLYYYYK..KYYK",
+      ".KYOYYLLLLLYYOYK..KYOK",
+      ".KYYYYLLLLLYYYYK..KYYK",
+      ".KYOYKLLLLLKYOYK..KYK.",
+      ".KYYYKLLKLLKYYYK.KYOK.",
+      ".KYYYKLLKLLKYYYKKYYK..",
+      ".KYOYKLLKLLKYOYYYOK...",
+      ".KLLLKLLKLLKLLLKKK....",
+      "..KKKKKKKKKKKKKK......",
+    ],
+    regions: {ears: [[0, 0, 6, 3], [10, 0, 16, 3]], mask: [[5, 7, 11, 10]], tail: [[15, 14, 21, 21]], paws: [[0, 21, 14, 22]]},
+  },
+  angry: {
+    art: [
+      "..KK.........KK...R.R.",
+      ".KYYK.......KYYK.RR.RR",
+      ".KYPYK.....KYPYK......",
+      ".KYYYYKKKKKYYYYK.RR.RR",
+      "KYYYYYOYYYOYYYYYK.R.R.",
+      "KYYKKYYOYOYYKKYYK.....",
+      "KYYYYKKYYYKKYYYYK.....",
+      "KYYYEEYYYYYEEYYYK.....",
+      "KYLLLLLLPLLLLLLYK.....",
+      "KLLLLLLKKKLLLLLLK.....",
+      ".KLLLLKLLLKLLLLK......",
+      "..KKYYYYYYYYYKK.......",
+      "...KYYOYYYOYYK........",
+      "..KYYYOYLYOYYYK.......",
+      "..KYOYYLLLYYOYK....KK.",
+      ".KYYYYLLLLLYYYYK..KYYK",
+      ".KYOYYLLLLLYYOYK..KYOK",
+      ".KYYYYLLLLLYYYYK..KYYK",
+      ".KYOYKLLLLLKYOYK..KYK.",
+      ".KYYYKLLKLLKYYYK.KYOK.",
+      ".KYYYKLLKLLKYYYKKYYK..",
+      ".KYOYKLLKLLKYOYYYOK...",
+      ".KLLLKLLKLLKLLLKKK....",
+      "..KKKKKKKKKKKKKK......",
+    ],
+    regions: {ears: [[0, 0, 6, 3], [10, 0, 16, 3]], mask: [[5, 7, 11, 10]], tail: [[15, 14, 21, 21]], paws: [[0, 21, 14, 22]]},
+  },
+  playing: {
+    art: [
+      "....................................KK.",
+      "...................................KYYK",
+      "...................................KYOK",
+      "...................................KYYK",
+      "..................................KYYK.",
+      ".......KK......KK.................KYOK.",
+      "......KYYK....KYYK...............KYYK..",
+      "......KYPYKKKKYPYK...............KYOK..",
+      ".....KYYYYOYYOYYYYKKKKKKKKKKKKKKKYYK...",
+      ".....KYYYYYOOYYYYYYKYYOYYYOYYYOYYYK....",
+      ".....KYYEEYYYYEEYYYKYOYYYOYYYOYYYYK....",
+      ".....KYYEEYYYYEEYYYYYYYYOYYYOYYYOYK....",
+      ".....KLLLLLLKLLLLLLYYOYYYYYYYYYYYYK....",
+      ".....KLPPLLPPPLLPPLYYYYYOYYYOYYYOYK....",
+      "..KK..KLLLLLLLLLLLKYYYYYYYYYYYYYYYK....",
+      ".KRRK..KKKKKKKKKKKLLLLLLLLLLLKYYYYK....",
+      "KRwRRK..KLLK.KLLK.KKKKKKKKKKKKLLLK.....",
+      "KRRRRK..KLLK..KLLK.........KLLKKLLK....",
+      "KrRRrK...KKK...KKK..........KKK..KK....",
+      ".KrrK..................................",
+      "..KK...................................",
+    ],
+    regions: {ears: [[6, 5, 10, 7], [14, 5, 18, 7]], mask: [[9, 11, 15, 13]], tail: [[33, 0, 38, 8]], paws: [[7, 16, 18, 17], [27, 16, 34, 17]]},
+  },
+  sad: {
+    art: [
+      ".........................KK..",
+      "........................KYYK.",
+      "........................KYOK.",
+      "........................KYYK.",
+      "........................KYOK.",
+      ".........................KYYK",
+      ".........................KYOK",
+      ".KKKK.......KKKK.........KYYK",
+      "KYYYYK.....KYYYYK........KYK.",
+      ".KKYPYKKKKKYPYKK.........KYK.",
+      "..KYYYYOYOYYYYK.........KYK..",
+      ".KYYYYYYOYYYYYYK........KYK..",
+      ".KYKKKYYYYYKKKYK........KYK..",
+      ".KYYYEYYYYYEYYYK.......KYK...",
+      ".KYBYEYYYYYEYYYKKKKKKKKKKK...",
+      ".KLBLLLLKLLLLLLYYYOYYYOYYK...",
+      ".KLPPLLLPLLLLPPKYOYYYOYYYK...",
+      "..KLLLLLKLLLLLKYYYYOYYYOYK...",
+      "...KKKKKKKKKKKYOYYYYYYYYYK...",
+      ".......KYYLLLLLLLLLLLYYYYK...",
+      ".......KYYKKKKKKKKKKKKKYYK...",
+      ".......KYYK..........KYYK....",
+      ".......KLLK..........KLLK....",
+      ".......KKKK..........KKKK....",
+    ],
+    regions: {ears: [[0, 7, 6, 9], [10, 7, 16, 9]], mask: [[5, 14, 11, 17]], tail: [[22, 0, 27, 13]], paws: [[7, 22, 10, 22], [21, 22, 24, 22]]},
+  },
+  sleepy: {
+    art: [
+      ".KK......KK.....................",
+      "KYYK....KYYK....................",
+      "KYPYKKKKKYPYK...................",
+      "KYYYOYYOYYYYK...KKKKKKKKKK......",
+      "KYYYYOOYYYYYKKKKYYOYYYOYYYKK....",
+      "KYYYYYYYYYYYYYYYYYYOYYYOYYYYK...",
+      "KYCCCYYYYCCCYYOYYYYYOYYYOYYYYK..",
+      "KLLLLLLKLLLLLYOYYYYYYOYYYOYYYK..",
+      "KLPPLLKKKLLPPLYYYYYYYYYYYYYYYYK.",
+      ".KLLLLLLLLLLKYOYYYYYYOYYYOYYYYK.",
+      "..KKKKKKKKKKYYYOYYYYYYYYYYYYYYK.",
+      "..KLLLKLLLKYYYYYKKKKKKKYYYYYYK..",
+      "..KLLLKLLLKKKKKKYYOYYOYYKKKKK...",
+      "...KKKKKKKKYYYOYYYOYYYOYYK......",
+      "..........KKKKKKKKKKKKKKK.......",
+    ],
+    regions: {ears: [[0, 0, 4, 2], [8, 0, 12, 2]], mask: [[5, 7, 9, 9]], tail: [[11, 12, 24, 13]], paws: [[2, 11, 10, 12]]},
+  },
+  gameOver: {
+    art: [
+      "..KK..........KK..",
+      ".KYYK........KYYK.",
+      ".KYPYK......KYPYK.",
+      ".KYPYYKKKKKKYYPYK.",
+      "KYYYYYYOYYOYYYYYYK",
+      "KYYYYYYYOOYYYYYYYK",
+      "KYYYYYYYYYYYYYYYYK",
+      "KYYCYCYYYYYYCYCYYK",
+      "KYYYCYYYYYYYYCYYYK",
+      "KYYCYCYYYYYYCYCYYK",
+      "KLLLLLLLLLLLLLLLLK",
+      "KLPPLLLLPPLLLLPPLK",
+      "KLPPLLLLKKLLLLPPLK",
+      ".KLLLLLLLLLLLLLLK.",
+      "..KKLLLLLLLLLLKK..",
+      "....KKKKKKKKKK....",
+    ],
+    regions: {ears: [[0, 0, 6, 3], [11, 0, 17, 3]], mask: [[6, 10, 11, 13]], tail: [], paws: []},
+  },
+};
+
+// ---------- Colors and coats ----------
+
+// fur: main color, dark: stripes/shading, light: face and belly, outline: edges,
+// eyes: open eyes, closedEyes: sleeping eyes and the X eyes on game over.
+const CAT_COLORS = {
+  orange: { label: "Orange", fur: "#f8c430", dark: "#e08018", light: "#ffeca8", outline: "#5c1e0e", eyes: "#5c1e0e", closedEyes: "#5c1e0e" },
+  gray:   { label: "Gray",   fur: "#a9a9b6", dark: "#7a7a8c", light: "#e4e4ec", outline: "#2f2f3a", eyes: "#2f2f3a", closedEyes: "#2f2f3a" },
+  black:  { label: "Black",  fur: "#3c3c46", dark: "#26262e", light: "#6a6a78", outline: "#111116", eyes: "#e8d040", closedEyes: "#9a9aa8" },
+  white:  { label: "White",  fur: "#f4f4f4", dark: "#d6d6de", light: "#ffffff", outline: "#4a3a3a", eyes: "#4a3a3a", closedEyes: "#4a3a3a" },
+  beige:  { label: "Beige",  fur: "#e8d0a8", dark: "#c8a674", light: "#fff4e0", outline: "#5c3e22", eyes: "#5c3e22", closedEyes: "#5c3e22" },
+  brown:  { label: "Brown",  fur: "#9c6438", dark: "#6e4020", light: "#e0b890", outline: "#3a1a0a", eyes: "#3a1a0a", closedEyes: "#3a1a0a" },
+};
+
+const CAT_COATS = {
+  solid: "Solid",
+  tabby: "Tabby",
+  spotted: "Spotted",
+  tuxedo: "Tuxedo",
+  tortoiseshell: "Tortoiseshell",
+  calico: "Calico",
+  colorpoint: "Colorpoint (Siamese)",
+  van: "Van",
+};
+
+// Colors that never change with the cat's color.
+const FIXED_COLORS = {
+  P: "#f08c8c", // pink nose, ears and blush
+  B: "#6eaae6", // tear
+  R: "#c81c28", // ball and anger mark
+  r: "#780a14", // ball shadow
+  w: "#ff9696", // ball highlight
+};
+
+const WHITE = "#fbfbfb";
+const SCALE = 9; // each pixel-art pixel becomes 9x9 screen pixels
+
+// Mix two "#rrggbb" colors; amount 0 gives a, 1 gives b.
+function mix(a, b, amount) {
+  const ch = (hex, i) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  const parts = [0, 1, 2].map((i) => Math.round(ch(a, i) * (1 - amount) + ch(b, i) * amount));
+  return "#" + parts.map((n) => n.toString(16).padStart(2, "0")).join("");
+}
+
+// Patches for tortoiseshell and calico: the same 3x3 blocks always get the same color.
+function patch(x, y, choices) {
+  const bx = Math.floor(x / 3);
+  const by = Math.floor(y / 3);
+  let hash = Math.imul(bx, 374761393) + Math.imul(by, 668265263);
+  hash = Math.imul(hash ^ (hash >>> 13), 1274126177);
+  hash = (hash ^ (hash >>> 16)) >>> 0;
+  return choices[hash % choices.length];
+}
+
+function inRegion(regions, names, x, y) {
+  return names.some((name) =>
+    regions[name].some(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1)
+  );
+}
+
+// The color of one fur pixel (Y = fur, O = stripe, L = light fur).
+function furColor(letter, x, y, color, coat, regions) {
+  const orange = CAT_COLORS.orange;
+  const blackOrOrange = color === CAT_COLORS.orange || color === CAT_COLORS.black;
+
+  switch (coat) {
+    case "tabby":
+      return { Y: color.fur, O: color.dark, L: color.light }[letter];
+    case "spotted": {
+      if (letter === "L") return color.light;
+      const spot = y % 2 === 0 && (x + Math.floor(y / 2) * 3) % 4 === 0;
+      return spot ? color.dark : color.fur;
+    }
+    case "tuxedo":
+      return letter === "L" ? WHITE : color.fur;
+    case "tortoiseshell": {
+      if (letter === "L") return color.light;
+      const choices = blackOrOrange
+        ? [CAT_COLORS.black.fur, orange.dark, CAT_COLORS.black.dark, orange.fur]
+        : [color.fur, orange.dark, color.dark, orange.fur];
+      return patch(x, y, choices);
+    }
+    case "calico": {
+      if (letter === "L") return WHITE;
+      const other = blackOrOrange ? CAT_COLORS.black.fur : color.fur;
+      return patch(x, y, [WHITE, WHITE, orange.dark, other]);
+    }
+    case "colorpoint":
+      if (inRegion(regions, ["ears", "mask", "tail", "paws"], x, y)) return color.dark;
+      return letter === "L" ? mix(color.light, WHITE, 0.6) : mix(color.fur, WHITE, 0.75);
+    case "van":
+      if (inRegion(regions, ["ears", "tail"], x, y)) return letter === "O" ? color.dark : color.fur;
+      return WHITE;
+    default: // solid
+      return letter === "L" ? color.light : color.fur;
+  }
+}
+
+const spriteCache = {};
+
+// Returns an image URL of the sprite in the given color and coat.
+function drawCat(spriteName, colorName, coatName) {
+  const key = spriteName + "/" + colorName + "/" + coatName;
+  if (spriteCache[key]) return spriteCache[key];
+
+  const sprite = SPRITES[spriteName];
+  const color = CAT_COLORS[colorName] || CAT_COLORS.orange;
+  const coat = coatName in CAT_COATS ? coatName : "solid";
+
+  const canvas = document.createElement("canvas");
+  canvas.width = sprite.art[0].length * SCALE;
+  canvas.height = sprite.art.length * SCALE;
+  const ctx = canvas.getContext("2d");
+
+  sprite.art.forEach((row, y) => {
+    [...row].forEach((letter, x) => {
+      let fill;
+      if (letter === ".") return;
+      else if (letter === "K") fill = color.outline;
+      else if (letter === "E") fill = color.eyes;
+      else if (letter === "C") fill = color.closedEyes;
+      else if ("YOL".includes(letter)) fill = furColor(letter, x, y, color, coat, sprite.regions);
+      else fill = FIXED_COLORS[letter];
+      ctx.fillStyle = fill;
+      ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+    });
+  });
+
+  return (spriteCache[key] = canvas.toDataURL());
+}
