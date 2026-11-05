@@ -356,3 +356,34 @@ button:hover {
 .danger-button:hover {
   background: #b832321a;
 }
+
+/* Kittens are drawn a bit smaller */
+#cat-image.kitten {
+  scale: 0.75;
+}
+#friend-image.kitten {
+  scale: -0.75 0.75;
+  transform-origin: bottom center;
+}
+
+/* Relationships: the line under the name and the badges on the faces */
+.relations {
+  color: #87634c;
+  margin-top: -8px;
+}
+.relations:empty {
+  display: none;
+}
+.cat-face {
+  position: relative;
+}
+.relation-badge {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  font-size: 14px;
+  line-height: 1;
+}
+#relations-heading {
+  margin: 18px 0 8px;
+}

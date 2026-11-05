@@ -474,6 +474,13 @@ function swishTail(grid, regions) {
   }
 }
 
+// Old cats: some fur pixels turn grey, more of them around the muzzle.
+const GREY_HAIR = "#d6d3cf";
+function isGreyHair(x, y, regions) {
+  const onMuzzle = inRegion(regions, ["mask"], x, y);
+  return hash2(x * 7 + 3, y * 11 + 5) % (onMuzzle ? 3 : 8) === 0;
+}
+
 // Messy fur: little tufts sticking out of the outline (T) and dirt spots on the fur (X).
 function makeMessy(grid) {
   const at = (x, y) => (grid[y] && grid[y][x]) || ".";
@@ -495,7 +502,7 @@ const spriteCache = {};
 // Returns an image URL of the sprite in the given color, coat and eye color.
 // Options: hat (birthday party hat), messy (tufts and dirt when the cat needs brushing),
 // blink (eyes closed), tail (tail swished to the side) and happy (^ ^ eyes) for the animation frames,
-// look ("left" or "right") to make the pupils look to one side.
+// look ("left" or "right") to make the pupils look to one side, and grey (grey hairs for old cats).
 function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
   const sprite = SPRITES[spriteName];
   const hat = Boolean(options.hat && sprite.hat);
@@ -504,7 +511,8 @@ function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
   const tail = Boolean(options.tail);
   const happy = Boolean(options.happy && sprite.happyEyes);
   const look = options.look === "left" || options.look === "right" ? options.look : "";
-  const key = [spriteName, colorName, coatName, eyesName, hat, messy, blink, tail, happy, look].join("/");
+  const grey = Boolean(options.grey);
+  const key = [spriteName, colorName, coatName, eyesName, hat, messy, blink, tail, happy, look, grey].join("/");
   if (spriteCache[key]) return spriteCache[key];
 
   const color = CAT_COLORS[colorName] || CAT_COLORS.orange;
@@ -548,7 +556,10 @@ function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
       else if (letter === "F") fill = eyes.right;
       else if (letter === "D") fill = eyes.pupil || color.outline;
       else if (letter === "C") fill = color.closedEyes;
-      else if ("YOL".includes(letter)) fill = furColor(letter, x, y - top, color, coat, sprite.regions);
+      else if ("YOL".includes(letter)) {
+        fill = furColor(letter, x, y - top, color, coat, sprite.regions);
+        if (grey && isGreyHair(x, y - top, sprite.regions)) fill = mix(fill, GREY_HAIR, 0.75);
+      }
       else fill = FIXED_COLORS[letter];
       ctx.fillStyle = fill;
       ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);

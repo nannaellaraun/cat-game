@@ -43,6 +43,8 @@ const DEFAULT_TRAITS = {
   petScratchChance: 0, // chance of a scratch from petting
   laserSeconds: 20, // how long a laser dot round lasts
   laserJoy: 1, // happiness from laser catches (1 = normal)
+  bondRate: 10, // how fast friendships grow when playing together
+  squabbleChance: 0.1, // chance that playing together turns into a squabble
 };
 
 const PERSONALITIES = {
@@ -50,6 +52,8 @@ const PERSONALITIES = {
   neurotic: {
     label: "Neurotic",
     staysInMiddle: true,
+    bondRate: 8,
+    squabbleChance: 0.25,
     hungryCost: 25,
     petsBeforeAngry: 4,
     angryCost: 25,
@@ -67,6 +71,7 @@ const PERSONALITIES = {
     bellyScratchChance: 0.2,
     laserSeconds: 30, // loves the laser dot
     laserJoy: 1.5,
+    bondRate: 12,
   },
   bossy: {
     label: "Bossy",
@@ -77,6 +82,8 @@ const PERSONALITIES = {
     petScratchChance: 0.2,
     laserSeconds: 10, // gets bored of the laser dot
     laserJoy: 0.5,
+    bondRate: 5,
+    squabbleChance: 0.4,
   },
   agreeable: {
     label: "Agreeable",
@@ -84,6 +91,8 @@ const PERSONALITIES = {
     timeDirt: 1,
     mess: 0.5,
     bellyScratchChance: 0, // never scratches during belly rubs
+    bondRate: 15,
+    squabbleChance: 0.03,
   },
 };
 
@@ -109,6 +118,7 @@ function startingStats(name) {
 // A new cat with the default look and starting stats.
 function newCat(name) {
   return {
+    id: Math.random().toString(36).slice(2, 10), // never changes, used for relationships
     name,
     age: 0,
     gender: "none",
@@ -131,6 +141,7 @@ function repairCat(saved) {
     if (typeof value === "number" && !Number.isFinite(loaded[key])) loaded[key] = value;
   }
   delete loaded.flash; // the flash setting now belongs to the whole game
+  if (!saved.id) loaded.id = fresh.id;
   return loaded;
 }
 
@@ -142,16 +153,17 @@ function loadState() {
   } catch {
     // A broken save starts a new game.
   }
-  if (!saved) return { cats: [newCat("Cat")], current: 0, flash: true };
+  if (!saved) return { cats: [newCat("Cat")], current: 0, flash: true, relations: {} };
 
   // Saves from before multiple cats held just one cat.
   if (!Array.isArray(saved.cats)) {
-    return { cats: [repairCat(saved)], current: 0, flash: saved.flash !== false };
+    return { cats: [repairCat(saved)], current: 0, flash: saved.flash !== false, relations: {} };
   }
   const cats = saved.cats.filter(Boolean).slice(0, MAX_CATS).map(repairCat);
   if (cats.length === 0) cats.push(newCat("Cat"));
   const current = Math.min(Math.max(0, Number(saved.current) || 0), cats.length - 1);
-  return { cats, current, flash: saved.flash !== false };
+  const relations = saved.relations && typeof saved.relations === "object" ? saved.relations : {};
+  return { cats, current, flash: saved.flash !== false, relations };
 }
 
 function saveState() {
@@ -254,14 +266,31 @@ const actions = {
   playTogether() {
     const friend = playFriend();
     if (!friend) return;
+    const mine = traits();
+    const theirs = withCat(friend, traits);
+    const before = relationOf(cat, friend);
+    const pair = bondOf(cat, friend);
+
+    // Sometimes playing turns into a squabble; rivals squabble more.
+    const squabbleChance = Math.max(mine.squabbleChance, theirs.squabbleChance) + (before === "rivals" ? 0.2 : 0);
+    const squabble = Math.random() < squabbleChance;
+    const growth = squabble ? -15 : Math.round((mine.bondRate + theirs.bondRate) / 2);
+    pair.bond = Math.max(-100, Math.min(100, pair.bond + growth));
+    const joy = squabble ? -5 : 10 + (before ? RELATIONS[before].joy : 0);
+
+    let message = cat.name + " and " + friend.name + (squabble ? " got into a squabble!" : " play together!");
+    const after = relationOf(cat, friend);
+    if (after && after !== before) message += " They are now " + RELATIONS[after].now + "!";
+    if (!squabble && after === "couple" && maybeKitten(cat, friend, pair)) message += " 🍼 They had a kitten!";
+
     for (const c of [cat, friend]) {
       c.activity = "chasing";
-      c.happiness = up(c.happiness, 10);
+      c.happiness = joy >= 0 ? up(c.happiness, joy) : down(c.happiness, -joy);
       c.energy = down(c.energy, 5);
       c.hunger = up(c.hunger, 5);
       c.cleanliness = down(c.cleanliness, 5);
       c.lastAttention = Date.now();
-      c.message = cat.name + " and " + friend.name + " play together!";
+      c.message = message;
     }
     togetherFriend = friend;
   },
@@ -443,7 +472,8 @@ const isJealous = (c) => game.cats.length > 1 && c.lives > 0 && Date.now() - c.l
 function giveAttention() {
   cat.lastAttention = Date.now();
   for (const other of game.cats) {
-    if (other !== cat && isJealous(other)) other.happiness = down(other.happiness, 3);
+    const close = ["friends", "best", "couple"].includes(relationOf(cat, other));
+    if (other !== cat && isJealous(other) && !close) other.happiness = down(other.happiness, 3);
   }
 }
 
@@ -477,6 +507,9 @@ function removeCat() {
   if (game.cats.length <= 1) return;
   if (!confirm("Remove " + cat.name + "? This can't be undone.")) return;
   stopAnimation();
+  for (const key of Object.keys(game.relations)) {
+    if (key.split("|").includes(cat.id)) delete game.relations[key];
+  }
   game.cats.splice(game.current, 1);
   game.current = Math.max(0, game.current - 1);
   cat = game.cats[game.current];
@@ -500,8 +533,17 @@ function renderSwitcher() {
     face.alt = "";
     face.src = drawCat(c.lives > 0 ? "face" : "gameOver", c.color, c.coat, c.eyes, {
       hat: Date.now() < c.partyUntil && c.lives > 0,
+      grey: c.age >= OLD_AGE,
     });
     button.append(face);
+    const relation = c === cat ? null : relationOf(cat, c);
+    if (relation) {
+      const badge = document.createElement("span");
+      badge.className = "relation-badge";
+      badge.textContent = RELATIONS[relation].sign;
+      button.append(badge);
+      button.title = c.name + " – " + RELATIONS[relation].label;
+    }
     button.addEventListener("click", () => switchCat(index));
     row.append(button);
   });
@@ -524,7 +566,9 @@ function showFriend(friend) {
   image.src = drawCat("chase", friend.color, friend.coat, friend.eyes, {
     hat: Date.now() < friend.partyUntil,
     messy: friend.cleanliness <= MESSY_AT,
+    grey: friend.age >= OLD_AGE,
   });
+  image.classList.toggle("kitten", friend.age <= KITTEN_AGE);
   image.alt = friend.name;
   image.hidden = false;
   $("cat-pictures").classList.add("together");
@@ -591,12 +635,90 @@ function render() {
   $("lives-value").textContent = cat.lives;
   $("hearts").textContent = "❤️".repeat(cat.lives) + "💔️".repeat(3 - cat.lives);
   const sprite = chooseImage(moodNames);
-  const look = { hat: isPartyTime(), messy: cat.cleanliness <= MESSY_AT, look: lookDirection };
+  const look = {
+    hat: isPartyTime(),
+    messy: cat.cleanliness <= MESSY_AT,
+    look: lookDirection,
+    grey: cat.age >= OLD_AGE,
+  };
+  $("cat-image").classList.toggle("kitten", cat.age <= KITTEN_AGE);
+  $("relations").textContent = game.cats
+    .filter((c) => c !== cat && relationOf(cat, c))
+    .map((c) => RELATIONS[relationOf(cat, c)].sign + " " + RELATIONS[relationOf(cat, c)].with + " " + c.name)
+    .join(" · ");
   const draw = (extra) => drawCat(sprite, cat.color, cat.coat, cat.eyes, { ...look, ...extra });
   catFrames = { normal: draw(), blink: draw({ blink: true }), tail: draw({ tail: true }) };
   catLook = look;
   if (!animation) $("cat-image").src = catFrames.normal;
-  $("game-over-image").src = drawCat("gameOver", cat.color, cat.coat, cat.eyes);
+  $("game-over-image").src = drawCat("gameOver", cat.color, cat.coat, cat.eyes, { grey: cat.age >= OLD_AGE });
+}
+
+// ---------- Age and relationships ----------
+
+const KITTEN_AGE = 1; // kittens (age 0–1) are drawn smaller
+const OLD_AGE = 18; // old cats (age 18+) get grey hairs
+const ADULT_AGE = 2; // only grown-up cats can be a couple
+const KITTEN_CHANCE = 0.15; // chance a couple has a kitten when they play together
+const KITTEN_GAP_MS = 7 * 24 * 60 * 60 * 1000; // at most one kitten a week per couple
+
+// sign: shown on faces and under the name; joy: extra happiness when playing together.
+const RELATIONS = {
+  friends: { label: "Friends", sign: "🤝", joy: 5, with: "Friends with", now: "friends" },
+  best: { label: "Best friends", sign: "💛", joy: 8, with: "Best friends with", now: "best friends" },
+  couple: { label: "Couple", sign: "💕", joy: 12, with: "In a couple with", now: "a couple" },
+  rivals: { label: "Rivals", sign: "⚡", joy: -10, with: "Rivals with", now: "rivals" },
+};
+
+// Each pair of cats has a bond from -100 (rivals) to 100 (couple), and maybe a relationship you chose.
+const pairKey = (a, b) => [a.id, b.id].sort().join("|");
+function bondOf(a, b) {
+  const key = pairKey(a, b);
+  if (!game.relations[key]) game.relations[key] = { bond: 0, chosen: null, lastKitten: 0 };
+  return game.relations[key];
+}
+
+function relationOf(a, b) {
+  const pair = game.relations[pairKey(a, b)];
+  if (!pair) return null;
+  if (pair.chosen && RELATIONS[pair.chosen]) return pair.chosen;
+  if (pair.bond <= -30) return "rivals";
+  if (pair.bond >= 90 && canBecomeCouple(a, b, pair.bond)) return "couple";
+  if (pair.bond >= 60) return "best";
+  if (pair.bond >= 30) return "friends";
+  return null;
+}
+
+// Grown-ups only, and a cat's couple is its strongest bond (unless you chose someone else for it).
+function canBecomeCouple(a, b, bond) {
+  if (a.age < ADULT_AGE || b.age < ADULT_AGE) return false;
+  for (const c of [a, b]) {
+    for (const other of game.cats) {
+      if (other === a || other === b) continue;
+      const pair = game.relations[pairKey(c, other)];
+      if (!pair) continue;
+      if (pair.chosen === "couple") return false;
+      if (!pair.chosen && pair.bond > bond && other.age >= ADULT_AGE) return false;
+    }
+  }
+  return true;
+}
+
+// A couple playing together may have a kitten that looks a bit like both parents.
+function maybeKitten(a, b, pair) {
+  if (game.cats.length >= MAX_CATS || a.lives <= 0 || b.lives <= 0) return false;
+  if (Date.now() - (pair.lastKitten || 0) < KITTEN_GAP_MS || Math.random() >= KITTEN_CHANCE) return false;
+  const pick = (options) => options[Math.floor(Math.random() * options.length)];
+  const kitten = newCat("Kitten");
+  kitten.color = pick([a.color, b.color]);
+  kitten.coat = pick([a.coat, b.coat]);
+  kitten.eyes = pick([a.eyes, b.eyes]);
+  kitten.personality = pick([a.personality, b.personality]);
+  kitten.message = "Kitten was born to " + a.name + " and " + b.name + "! Give it a name in the settings.";
+  game.cats.push(kitten);
+  pair.lastKitten = Date.now();
+  bondOf(a, kitten).bond = 40; // family starts out as friends
+  bondOf(b, kitten).bond = 40;
+  return true;
 }
 
 // ---------- Animations ----------
@@ -889,6 +1011,55 @@ function fillSettingsForm() {
   personalityInput.value = cat.personality in PERSONALITIES ? cat.personality : "default";
   flashInput.checked = game.flash !== false;
   $("remove-cat").hidden = game.cats.length <= 1;
+  fillRelationSettings();
+}
+
+// One dropdown per other cat: let the relationship grow by itself, or choose it.
+function fillRelationSettings() {
+  const box = $("relation-settings");
+  box.replaceChildren();
+  const others = game.cats.filter((c) => c !== cat);
+  $("relations-heading").hidden = others.length === 0;
+  for (const other of others) {
+    const row = document.createElement("div");
+    row.className = "setting";
+    const label = document.createElement("label");
+    label.htmlFor = "relation-" + other.id;
+    label.textContent = "With " + other.name + ":";
+    const select = document.createElement("select");
+    select.id = "relation-" + other.id;
+    select.dataset.catId = other.id;
+    select.add(new Option("Let it grow", "auto"));
+    for (const [value, info] of Object.entries(RELATIONS)) select.add(new Option(info.label, value));
+    const pair = game.relations[pairKey(cat, other)];
+    select.value = (pair && pair.chosen) || "auto";
+    row.append(label, select);
+    box.append(row);
+  }
+}
+
+// Reads the relationship dropdowns. Returns an error message, or "" when everything is fine.
+function saveRelationSettings(newAge) {
+  const choices = [...$("relation-settings").querySelectorAll("select")].map((select) => ({
+    other: game.cats.find((c) => c.id === select.dataset.catId),
+    chosen: select.value === "auto" ? null : select.value,
+  }));
+  const couples = choices.filter((choice) => choice.chosen === "couple");
+  if (couples.length > 1) return "A cat can only be in a couple with one other cat.";
+  if (couples.length === 1 && (newAge < ADULT_AGE || couples[0].other.age < ADULT_AGE)) {
+    return "Only grown-up cats (age " + ADULT_AGE + " or older) can be a couple.";
+  }
+  for (const { other, chosen } of choices) {
+    if (chosen === "couple") {
+      // Both cats leave any other couple they were chosen into.
+      for (const [key, pair] of Object.entries(game.relations)) {
+        const ids = key.split("|");
+        if (pair.chosen === "couple" && (ids.includes(cat.id) || ids.includes(other.id))) pair.chosen = null;
+      }
+    }
+    bondOf(cat, other).chosen = chosen;
+  }
+  return "";
 }
 
 // The gear opens the settings pop-up; closing it without saving throws away changes.
@@ -910,6 +1081,12 @@ $("settings-form").addEventListener("submit", (event) => {
   const newAge = Number(ageInput.value);
 
   if (newName !== "" && Number.isInteger(newAge) && newAge >= 0 && newAge <= 30) {
+    // Checked first, so nothing is saved when a relationship choice isn't allowed.
+    const relationError = saveRelationSettings(newAge);
+    if (relationError) {
+      settingsError.textContent = relationError;
+      return;
+    }
     cat.name = newName;
     cat.age = newAge;
     cat.gender = genderInput.value in PRONOUNS ? genderInput.value : "none";
