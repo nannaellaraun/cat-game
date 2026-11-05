@@ -189,7 +189,7 @@ $("settings-form").addEventListener("submit", (event) => {
 
 // ---------- Time passing ----------
 
-// Opening the page counts as time passing, just like loading index.php did.
+// Opening the page counts as time passing.
 doAction("timePassed");
 
 setInterval(() => {
