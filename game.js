@@ -396,7 +396,7 @@ function render() {
   $("lives-value").textContent = cat.lives;
   $("hearts").textContent = "❤️".repeat(cat.lives) + "💔️".repeat(3 - cat.lives);
   const sprite = chooseImage(moodNames);
-  const look = { hat: isPartyTime(), messy: cat.cleanliness <= MESSY_AT };
+  const look = { hat: isPartyTime(), messy: cat.cleanliness <= MESSY_AT, look: lookDirection };
   const draw = (extra) => drawCat(sprite, cat.color, cat.coat, cat.eyes, { ...look, ...extra });
   catFrames = { normal: draw(), blink: draw({ blink: true }), tail: draw({ tail: true }) };
   catLook = look;
@@ -491,6 +491,86 @@ if (!reducedMotion) {
   blinkLoop();
   tailLoop();
 }
+
+// ---------- Flying visitors ----------
+
+// Now and then a butterfly, bird or bee flies across the card and the cat follows it with its eyes.
+let lookDirection = null; // "left" or "right" while the cat watches a visitor
+let visitorFlying = false; // only one visitor at a time, so the cat knows where to look
+
+const VISITOR_FLIGHT = {
+  butterfly: { speed: 70, wave: 18, waveSpeed: 3 }, // slow and fluttery
+  bird: { speed: 150, wave: 5, waveSpeed: 2 }, // fast and smooth
+  bee: { speed: 90, wave: 7, waveSpeed: 9 }, // buzzy zigzag
+};
+
+function setLook(side) {
+  if (side === lookDirection) return;
+  lookDirection = side;
+  render();
+}
+
+function flyVisitor() {
+  if (visitorFlying || cat.lives <= 0 || document.hidden) return;
+  visitorFlying = true;
+  const card = document.querySelector(".game");
+  let sky = card.querySelector(".sky");
+  if (!sky) {
+    sky = document.createElement("div");
+    sky.className = "sky"; // keeps visitors inside the card
+    card.append(sky);
+  }
+  const names = Object.keys(CRITTERS);
+  const name = names[Math.floor(Math.random() * names.length)];
+  const { speed, wave, waveSpeed } = VISITOR_FLIGHT[name];
+  const frames = [drawCritter(name, 0), drawCritter(name, 1)];
+
+  const cardBox = card.getBoundingClientRect();
+  const catBox = $("cat-image").getBoundingClientRect();
+  const catMiddle = catBox.left - cardBox.left + catBox.width / 2;
+  const height = catBox.top - cardBox.top + Math.random() * catBox.height * 0.5;
+  const fromLeft = Math.random() < 0.5;
+  const startX = fromLeft ? -70 : cardBox.width + 10;
+  const endX = fromLeft ? cardBox.width + 10 : -70;
+  const duration = (Math.abs(endX - startX) / speed) * 1000;
+
+  const visitor = document.createElement("img");
+  visitor.className = "visitor";
+  visitor.alt = "";
+  visitor.src = frames[0];
+  if (!fromLeft) visitor.style.scale = "-1 1"; // the pictures face right
+  sky.append(visitor);
+
+  const start = performance.now();
+  let shown = 0;
+  function step(now) {
+    const seconds = (now - start) / 1000;
+    const progress = (now - start) / duration;
+    if (progress >= 1) {
+      visitor.remove();
+      visitorFlying = false;
+      setLook(null);
+      return;
+    }
+    const x = startX + (endX - startX) * progress;
+    visitor.style.left = x + "px";
+    visitor.style.top = height + Math.sin(seconds * waveSpeed) * wave + "px";
+    const frame = Math.floor(seconds / 0.15) % 2; // flap the wings
+    if (frame !== shown) visitor.src = frames[(shown = frame)];
+    setLook(x + visitor.width / 2 < catMiddle ? "left" : "right");
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function visitorLoop(first) {
+  setTimeout(() => {
+    flyVisitor();
+    visitorLoop(false);
+  }, first ? randomBetween(8000, 20000) : randomBetween(20000, 60000));
+}
+
+if (!reducedMotion) visitorLoop(true);
 
 // ---------- Wiring up buttons and the settings form ----------
 

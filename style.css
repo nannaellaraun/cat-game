@@ -211,3 +211,16 @@ button:hover {
     animation: none;
   }
 }
+
+/* Flying visitors (butterfly, bird, bee) */
+.sky {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: 20px;
+}
+.visitor {
+  position: absolute;
+  image-rendering: pixelated;
+}

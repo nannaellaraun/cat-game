@@ -392,6 +392,25 @@ function happyEyes(grid, cells) {
   for (const [x, y] of cells) grid[y][x] = "C";
 }
 
+// Looking to one side: in each eye (a row of iris + pupil pixels) the pupil moves to the left or right end.
+function lookAside(grid, side) {
+  const isEye = (c) => c === "E" || c === "F" || c === "D";
+  grid.forEach((row) => {
+    let x = 0;
+    while (x < row.length) {
+      if (!isEye(row[x])) { x++; continue; }
+      let end = x;
+      while (end + 1 < row.length && isEye(row[end + 1])) end++;
+      if (end > x) {
+        const iris = row.slice(x, end + 1).find((c) => c !== "D") || "E";
+        for (let i = x; i <= end; i++) row[i] = iris;
+        row[side === "left" ? x : end] = "D";
+      }
+      x = end + 1;
+    }
+  });
+}
+
 // Tail swish: the upper part of the tail moves one pixel sideways.
 // Only the tail's own pixels move (not the body outline at the edge of the tail box).
 function swishTail(grid, regions) {
@@ -430,7 +449,8 @@ const spriteCache = {};
 
 // Returns an image URL of the sprite in the given color, coat and eye color.
 // Options: hat (birthday party hat), messy (tufts and dirt when the cat needs brushing),
-// blink (eyes closed), tail (tail swished to the side) and happy (^ ^ eyes) for the animation frames.
+// blink (eyes closed), tail (tail swished to the side) and happy (^ ^ eyes) for the animation frames,
+// look ("left" or "right") to make the pupils look to one side.
 function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
   const sprite = SPRITES[spriteName];
   const hat = Boolean(options.hat && sprite.hat);
@@ -438,7 +458,8 @@ function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
   const blink = Boolean(options.blink);
   const tail = Boolean(options.tail);
   const happy = Boolean(options.happy && sprite.happyEyes);
-  const key = [spriteName, colorName, coatName, eyesName, hat, messy, blink, tail, happy].join("/");
+  const look = options.look === "left" || options.look === "right" ? options.look : "";
+  const key = [spriteName, colorName, coatName, eyesName, hat, messy, blink, tail, happy, look].join("/");
   if (spriteCache[key]) return spriteCache[key];
 
   const color = CAT_COLORS[colorName] || CAT_COLORS.orange;
@@ -446,6 +467,7 @@ function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
   const eyes = CAT_EYES[eyesName] || CAT_EYES.black;
 
   const grid = sprite.art.map((row) => [...row]);
+  if (look) lookAside(grid, look);
   if (happy) happyEyes(grid, sprite.happyEyes);
   else if (blink) closeEyes(grid);
   if (tail) swishTail(grid, sprite.regions);
@@ -488,5 +510,103 @@ function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
     });
   });
 
+  return (spriteCache[key] = canvas.toDataURL());
+}
+
+// ---------- Flying visitors ----------
+
+// Small animals that fly past now and then. Each has two wing frames that take turns.
+const CRITTERS = {
+  butterfly: {
+    colors: { K: "#3a2440", p: "#e86aa8", y: "#f2d530" },
+    frames: [
+      [
+        "..K...K..",
+        "...K.K...",
+        ".KK.K.KK.",
+        "KpppKpppK",
+        "KpyyKyypK",
+        ".KppKppK.",
+        "..KK.KK..",
+      ],
+      [
+        "..K...K..",
+        "...K.K...",
+        "...KKK...",
+        "..KpKpK..",
+        "..KyKyK..",
+        "..KpKpK..",
+        "...KKK...",
+      ],
+    ],
+  },
+  bird: {
+    colors: { K: "#1e2a44", b: "#4a8ad8", l: "#cfe3f7", o: "#f2a33a", e: "#1e2a44" },
+    frames: [
+      [
+        "...KK.....",
+        "...KbK....",
+        "...KbbK.KK.",
+        ".KKKbbbKbeK",
+        "KbbbbbbbbbKo",
+        ".KKllllllK.",
+        "...KKKKKK...",
+      ],
+      [
+        ".........",
+        ".........",
+        "........KK.",
+        ".KKKKKKKbeK",
+        "KbbbbbbbbbKo",
+        ".KKlbbbllK.",
+        "...KbbKKK...",
+        "....KK......",
+      ],
+    ],
+  },
+  bee: {
+    colors: { K: "#2a2018", y: "#f2c230", w: "#e8f4ff" },
+    frames: [
+      [
+        ".KK.KK..",
+        "KwwKwwK.",
+        ".KKKKK..",
+        "KyKyKyK.",
+        "KyKyKyKK",
+        ".KKKKK..",
+      ],
+      [
+        "........",
+        "........",
+        ".KKKKK..",
+        "KyKyKyK.",
+        "KyKyKyKK",
+        ".KwwKwwK",
+        "..KK.KK.",
+      ],
+    ],
+  },
+};
+
+// Visitors are drawn with smaller pixels than the cat, so they look further away.
+const CRITTER_SCALE = 5;
+
+// Returns an image URL of one wing frame of a flying visitor.
+function drawCritter(name, frame) {
+  const key = "critter/" + name + "/" + frame;
+  if (spriteCache[key]) return spriteCache[key];
+  const { colors, frames } = CRITTERS[name];
+  const art = frames[frame];
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(...art.map((row) => row.length)) * CRITTER_SCALE;
+  canvas.height = art.length * CRITTER_SCALE;
+  const ctx = canvas.getContext("2d");
+  art.forEach((row, y) => {
+    [...row].forEach((letter, x) => {
+      if (!colors[letter]) return;
+      ctx.fillStyle = colors[letter];
+      ctx.fillRect(x * CRITTER_SCALE, y * CRITTER_SCALE, CRITTER_SCALE, CRITTER_SCALE);
+    });
+  });
   return (spriteCache[key] = canvas.toDataURL());
 }
