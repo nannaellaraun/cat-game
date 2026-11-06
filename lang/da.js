@@ -8,6 +8,7 @@ TEXTS.da = {
   "top.settings": "Indstillinger",
   "switcher.label": "Dine katte",
   "switcher.adopt": "Adopter en kat",
+  "switcher.needs": "{name} har brug for dig!",
 
   "age": "Alder: {age}",
   "birthday": "🎂 Fødselsdag i dag!",

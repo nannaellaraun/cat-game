@@ -33,6 +33,7 @@ TEXTS.en = {
   "top.settings": "Settings",
   "switcher.label": "Your cats",
   "switcher.adopt": "Adopt a cat",
+  "switcher.needs": "{name} needs you!",
 
   // Main screen
   "age": "Age: {age}",

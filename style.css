@@ -171,6 +171,31 @@ img {
   line-height: 1;
   border: 2px dashed var(--soft-border);
 }
+.attention-badge {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  animation: attention-bounce 1.6s ease-in-out infinite;
+}
+@keyframes attention-bounce {
+  0%, 70%, 100% { transform: translateY(0); }
+  80% { transform: translateY(-3px); }
+}
+:root.reduce-motion .attention-badge {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .attention-badge { animation: none; }
+}
 .relation-badge {
   position: absolute;
   right: -6px;

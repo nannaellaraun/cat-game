@@ -10,6 +10,7 @@ TEXTS.ru = {
   "top.settings": "Настройки",
   "switcher.label": "Твои кошки",
   "switcher.adopt": "Взять кошку",
+  "switcher.needs": "{name}: нужна твоя помощь!",
 
   "age": "Возраст: {age}",
   "birthday": "🎂 Сегодня день рождения!",

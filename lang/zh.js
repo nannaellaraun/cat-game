@@ -9,6 +9,7 @@ TEXTS.zh = {
   "top.settings": "设置",
   "switcher.label": "你的猫咪",
   "switcher.adopt": "领养一只猫",
+  "switcher.needs": "{name}需要你！",
 
   "age": "年龄：{age}",
   "birthday": "🎂 今天过生日！",

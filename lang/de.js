@@ -8,6 +8,7 @@ TEXTS.de = {
   "top.settings": "Einstellungen",
   "switcher.label": "Deine Katzen",
   "switcher.adopt": "Eine Katze adoptieren",
+  "switcher.needs": "{name} braucht dich!",
 
   "age": "Alter: {age}",
   "birthday": "🎂 Heute Geburtstag!",

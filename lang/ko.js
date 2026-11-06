@@ -10,6 +10,7 @@ TEXTS.ko = {
   "top.settings": "설정",
   "switcher.label": "내 고양이들",
   "switcher.adopt": "고양이 입양하기",
+  "switcher.needs": "{name/이/가} 당신을 필요로 해요!",
 
   "age": "나이: {age}",
   "birthday": "🎂 오늘은 생일이에요!",

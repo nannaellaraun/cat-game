@@ -9,6 +9,7 @@ TEXTS.ja = {
   "top.settings": "設定",
   "switcher.label": "あなたのねこ",
   "switcher.adopt": "ねこを迎える",
+  "switcher.needs": "{name}があなたを待っています！",
 
   "age": "年齢：{age}",
   "birthday": "🎂 今日はお誕生日！",

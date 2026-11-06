@@ -650,6 +650,11 @@ async function removeCat() {
   settingsDialog.close();
 }
 
+// A cat needs you when a stat is low (same limits as the moods) or it should see the vet.
+const needsAttention = (c) =>
+  c.lives > 0 &&
+  (c.hunger >= 80 || c.happiness <= 20 || c.energy <= 20 || c.cleanliness <= 20 || needsVet(c));
+
 // The row of little cat faces at the top of the card, plus a + to adopt another cat.
 function renderSwitcher() {
   const row = $("cat-switcher");
@@ -675,6 +680,15 @@ function renderSwitcher() {
       badge.textContent = RELATIONS[relation].sign;
       button.append(badge);
       button.title = c.name + " – " + t("rel." + relation);
+    }
+    // A red ! on the other cats that are low on something (or need the vet).
+    if (c !== cat && needsAttention(c)) {
+      const alert = document.createElement("span");
+      alert.className = "attention-badge";
+      alert.textContent = "!";
+      button.append(alert);
+      button.title += " – " + t("switcher.needs", { name: c.name });
+      button.setAttribute("aria-label", c.name + " – " + t("switcher.needs", { name: c.name }));
     }
     button.addEventListener("click", () => switchCat(index));
     row.append(button);

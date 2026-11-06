@@ -9,6 +9,7 @@ TEXTS.fi = {
   "top.settings": "Asetukset",
   "switcher.label": "Kissasi",
   "switcher.adopt": "Adoptoi kissa",
+  "switcher.needs": "{name} tarvitsee sinua!",
 
   "age": "Ikä: {age}",
   "birthday": "🎂 Tänään on syntymäpäivä!",
