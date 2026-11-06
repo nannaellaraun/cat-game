@@ -6,7 +6,7 @@ const TICK_MS = 35 * 1000; // the PHP page refreshed itself every 35 seconds
 
 // The cat pictures are drawn by sprites.js in the cat's chosen color and coat.
 
-// Pronouns for each gender choice in Cat Settings.
+// The gender choices in Cat Settings. Messages pick her/his/their (or the language's own words) in i18n.js.
 const PRONOUNS = {
   female: { subject: "she", object: "her", possessive: "her", possessivePronoun: "hers" },
   male: { subject: "he", object: "him", possessive: "his", possessivePronoun: "his" },
@@ -103,19 +103,19 @@ const PERSONALITIES = {
 // The rules for this cat's personality.
 // Old cats get messier, and sore joints (arthritis) make playing harder.
 function traits() {
-  const t = { ...DEFAULT_TRAITS, ...PERSONALITIES[cat.personality] };
+  const rules = { ...DEFAULT_TRAITS, ...PERSONALITIES[cat.personality] };
   if (cat.age >= OLD_AGE) {
-    t.timeDirt += 1; // old cats groom themselves less
-    t.mess *= 1.5;
+    rules.timeDirt += 1; // old cats groom themselves less
+    rules.mess *= 1.5;
   }
   if (inPain(cat)) {
-    t.playJoy = Math.round(t.playJoy / 2);
-    t.playTiredness *= 2;
-    t.laserSeconds = Math.round(t.laserSeconds / 2);
-    t.bellyScratchChance = Math.min(1, t.bellyScratchChance + 0.15); // it hurts
-    t.timeHappiness += 1;
+    rules.playJoy = Math.round(rules.playJoy / 2);
+    rules.playTiredness *= 2;
+    rules.laserSeconds = Math.round(rules.laserSeconds / 2);
+    rules.bellyScratchChance = Math.min(1, rules.bellyScratchChance + 0.15); // it hurts
+    rules.timeHappiness += 1;
   }
-  return t;
+  return rules;
 }
 
 // ---------- State ----------
@@ -132,7 +132,7 @@ function startingStats(name) {
     angryUntil: 0, // time (ms) when an angry cat calms down
     sick: false, // has a cold
     sickSince: 0, // when the cold started (or the last life it cost)
-    message: name + " is relaxing.",
+    message: { key: "msg.relaxing", params: { name } },
   };
 }
 
@@ -176,7 +176,10 @@ function loadState() {
   } catch {
     // A broken save starts a new game.
   }
-  if (!saved) return { cats: [newCat("Cat")], current: 0, flash: true, illness: true, relations: {} };
+  if (!saved) {
+    language = guessLanguage();
+    return { cats: [newCat(t("name.cat"))], current: 0, flash: true, illness: true, relations: {}, language };
+  }
 
   // Saves from before multiple cats held just one cat.
   if (!Array.isArray(saved.cats)) {
@@ -195,6 +198,7 @@ function loadState() {
     textSize: saved.textSize,
     contrast: saved.contrast,
     reduceMotion: saved.reduceMotion === true,
+    language: saved.language,
   };
 }
 
@@ -216,6 +220,8 @@ const CONTRASTS = ["normal", "high", "dark"];
 if (!TEXT_SIZES.includes(game.textSize)) game.textSize = "normal";
 if (!CONTRASTS.includes(game.contrast)) game.contrast = "normal";
 game.reduceMotion = game.reduceMotion === true;
+if (!LANGUAGES[game.language]) game.language = guessLanguage();
+language = game.language;
 
 function applyDisplaySettings() {
   const root = document.documentElement;
@@ -231,10 +237,12 @@ const motionReduced = () =>
 
 // Each cat keeps its last few messages, newest first, for the 🕘 history.
 const HISTORY_LENGTH = 8;
+const sameMessage = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 function rememberMessage(c) {
   if (!Array.isArray(c.history)) c.history = [];
-  if (!c.message || (c.history[0] && c.history[0].text === c.message)) return;
-  c.history.unshift({ text: c.message, time: Date.now() });
+  const last = c.history[0] && (c.history[0].message ?? c.history[0].text);
+  if (!c.message || sameMessage(last, c.message)) return;
+  c.history.unshift({ message: c.message, time: Date.now() });
   c.history.length = Math.min(c.history.length, HISTORY_LENGTH);
 }
 
@@ -251,10 +259,17 @@ function withCat(other, fn) {
 
 const isCurrentCat = (c) => c === game.cats[game.current];
 
+// Messages are saved as { key, params } so they can be shown in any language (see i18n.js).
+// The cat's name and gender are always included; the gender picks her/his/their.
+function note(key, params = {}, c = cat) {
+  return { key, params: { name: c.name, gender: c.gender, ...params } };
+}
+function say(key, params = {}, c = cat) {
+  c.message = note(key, params, c);
+}
+
 // ---------- Helpers ----------
 
-// The cat's pronouns, e.g. pronoun().possessive is "her", "his" or "their".
-const pronoun = () => PRONOUNS[cat.gender] || PRONOUNS.none;
 
 const up = (value, amount) => Math.min(100, value + amount);
 const down = (value, amount) => Math.max(0, value - amount);
@@ -268,7 +283,7 @@ const actions = {
     cat.happiness = up(cat.happiness, traits().feedJoy);
     cat.energy = up(cat.energy, traits().feedEnergy);
     cat.cleanliness = down(cat.cleanliness, Math.round(5 * traits().mess)); // a bit of food in the fur
-    cat.message = cat.name + " enjoyed " + pronoun().possessive + " food!";
+    say("msg.feed");
   },
   play() {
     if (cat.sick) return tooSick();
@@ -277,14 +292,14 @@ const actions = {
     cat.energy = down(cat.energy, traits().playTiredness);
     cat.hunger = up(cat.hunger, 5);
     cat.cleanliness = down(cat.cleanliness, Math.round(15 * traits().mess)); // rolling around gets the fur messy
-    cat.message = cat.name + " is playing with " + pronoun().possessive + " ball!";
+    say("msg.play");
   },
   sleep() {
     cat.activity = "sleeping";
     cat.hunger = up(cat.hunger, 15);
     cat.happiness = up(cat.happiness, 5);
     cat.energy = up(cat.energy, 30);
-    cat.message = cat.name + " curled up for " + pronoun().possessive + " nap.";
+    say("msg.sleep");
   },
   pet() {
     if (Math.random() < traits().petScratchChance) return scratch();
@@ -292,14 +307,14 @@ const actions = {
     if (cat.petStreak > traits().petsBeforeAngry) {
       cat.activity = "angry";
       cat.happiness = down(cat.happiness, traits().angryCost);
-      cat.message = cat.name + " has had enough petting! Give " + pronoun().object + " a break.";
+      say("msg.angry");
       // Every pet while angry restarts the countdown.
       cat.angryUntil = Date.now() + CALM_DOWN_MS;
       scheduleCalmDown();
     } else {
       cat.activity = "neutral";
       cat.happiness = up(cat.happiness, 5);
-      cat.message = cat.name + " purrs and swishes " + pronoun().possessive + " tail.";
+      say("msg.purr");
       nextAnimation = "pet";
     }
   },
@@ -307,7 +322,7 @@ const actions = {
     if (Math.random() < traits().bellyScratchChance) return scratch();
     cat.activity = "neutral";
     cat.happiness = up(cat.happiness, 10);
-    cat.message = cat.name + " rolls over and purrs. Belly rubs are the best!";
+    say("msg.bellyRub");
     nextAnimation = "belly";
   },
   brush() {
@@ -315,12 +330,12 @@ const actions = {
     cat.activity = "neutral";
     cat.cleanliness = up(cat.cleanliness, 30);
     cat.happiness = up(cat.happiness, 5);
-    cat.message = cat.name + " loves being brushed. Look at " + pronoun().possessive + " shiny fur!";
+    say("msg.brush");
   },
   meow() {
     cat.activity = "neutral";
     cat.happiness = up(cat.happiness, 5);
-    cat.message = cat.name + " says: Meow!";
+    say("msg.meow");
   },
   reset() {
     Object.assign(cat, startingStats(cat.name));
@@ -341,10 +356,10 @@ const actions = {
     pair.bond = Math.max(-100, Math.min(100, pair.bond + growth));
     const joy = squabble ? -5 : 10 + (before ? RELATIONS[before].joy : 0);
 
-    let message = cat.name + " and " + friend.name + (squabble ? " got into a squabble!" : " play together!");
+    const message = [note(squabble ? "msg.squabble" : "msg.together", { friend: friend.name })];
     const after = relationOf(cat, friend);
-    if (after && after !== before) message += " They are now " + RELATIONS[after].now + "!";
-    if (!squabble && after === "couple" && maybeKitten(cat, friend, pair)) message += " 🍼 They had a kitten!";
+    if (after && after !== before) message.push(note("msg.now." + after));
+    if (!squabble && after === "couple" && maybeKitten(cat, friend, pair)) message.push(note("msg.hadKitten"));
 
     for (const c of [cat, friend]) {
       c.activity = "chasing";
@@ -365,9 +380,10 @@ const actions = {
     cat.activity = "neutral";
     cat.happiness = down(cat.happiness, 10); // cats don't like the vet
     const parts = [];
-    if (hadCold) parts.push(cat.name + " is all better after the vet!");
-    if (cat.arthritis) parts.push("The vet gave " + cat.name + " pain medicine for the stiff joints. It helps for 12 hours.");
-    cat.message = parts.join(" ") + " " + cat.name + " didn't enjoy the trip, though.";
+    if (hadCold) parts.push(note("msg.vetCured"));
+    if (cat.arthritis) parts.push(note("msg.vetPain"));
+    parts.push(note("msg.vetTrip"));
+    cat.message = parts;
     nextAnimation = "vet";
   },
   laserDone() {
@@ -376,17 +392,15 @@ const actions = {
     cat.happiness = up(cat.happiness, Math.min(30, Math.round(caught * 3 * traits().laserJoy)));
     cat.energy = down(cat.energy, 8);
     cat.hunger = up(cat.hunger, 5);
-    cat.message =
-      caught === 0
-        ? cat.name + " watched the laser dot, but nobody caught it."
-        : cat.name + " caught the laser dot " + caught + (caught === 1 ? " time!" : " times!");
+    if (caught === 0) say("msg.laserNone");
+    else say("msg.laserCaught", { count: caught });
   },
   timePassed() {
-    const t = traits();
-    cat.hunger = up(cat.hunger, t.timeHunger);
-    cat.happiness = down(cat.happiness, t.timeHappiness);
-    cat.energy = down(cat.energy, t.timeEnergy);
-    cat.cleanliness = down(cat.cleanliness, t.timeDirt);
+    const rules = traits();
+    cat.hunger = up(cat.hunger, rules.timeHunger);
+    cat.happiness = down(cat.happiness, rules.timeHappiness);
+    cat.energy = down(cat.energy, rules.timeEnergy);
+    cat.cleanliness = down(cat.cleanliness, rules.timeDirt);
     checkBirthday();
     checkHealth();
   },
@@ -404,7 +418,7 @@ function checkHealth() {
   // Old cats can develop arthritis, slowly and only once.
   if (cat.age >= OLD_AGE && !cat.arthritis && Math.random() < ARTHRITIS_CHANCE) {
     cat.arthritis = true;
-    cat.message = cat.name + " has stiff, sore joints (arthritis) 🦴. The vet can give " + pronoun().object + " pain medicine.";
+    say("msg.arthritis");
   }
   if (cat.sick) {
     cat.happiness = down(cat.happiness, 2);
@@ -412,7 +426,7 @@ function checkHealth() {
     if (Date.now() - cat.sickSince >= SICK_LIFE_MS) {
       cat.lives = Math.max(0, cat.lives - 1);
       cat.sickSince = Date.now();
-      cat.message = cat.name + " is very sick and lost a life! Take " + pronoun().object + " to the vet.";
+      say("msg.sickLife");
     }
     return;
   }
@@ -424,7 +438,7 @@ function checkHealth() {
   if (Math.random() < chance) {
     cat.sick = true;
     cat.sickSince = Date.now();
-    cat.message = cat.name + " caught a cold! 🤒 Take " + pronoun().object + " to the vet.";
+    say("msg.cold");
   }
 }
 
@@ -433,7 +447,7 @@ const inPain = (c) => game.illness !== false && c.arthritis && Date.now() >= c.p
 const needsVet = (c) => game.illness !== false && (c.sick || inPain(c));
 
 function tooSick() {
-  cat.message = cat.name + " is too sick to play. Take " + pronoun().object + " to the vet.";
+  say("msg.tooSick");
 }
 
 // ---------- Scratching ----------
@@ -442,7 +456,7 @@ function tooSick() {
 function scratch() {
   cat.activity = "scratching";
   cat.happiness = down(cat.happiness, 5);
-  cat.message = "Ouch! " + cat.name + " scratched you!";
+  say("msg.scratch");
   cat.angryUntil = Date.now() + CALM_DOWN_MS;
   scheduleCalmDown();
   flashRed();
@@ -477,8 +491,8 @@ function checkBirthday() {
   const midnight = new Date();
   midnight.setHours(24, 0, 0, 0);
   cat.partyUntil = midnight.getTime();
-  cat.message = "🎂 Happy birthday, " + cat.name + "!";
-  if (grewUp) cat.message += " " + cat.name + " turned " + cat.age + "!";
+  cat.message = [note("msg.birthday")];
+  if (grewUp) cat.message.push(note("msg.turned", { age: cat.age }));
   showConfetti();
 }
 
@@ -523,11 +537,11 @@ function applyRules() {
   // Lose a life when everything is at rock bottom
   if (cat.hunger >= 100 && cat.happiness <= 0 && cat.energy <= 0) {
     cat.lives = Math.max(0, cat.lives - 1);
-    cat.message = cat.name + " lost a life!";
+    say("msg.lostLife");
   }
 
   if (cat.lives <= 0) {
-    cat.message = "GAME OVER! " + cat.name + " ran out of lives.";
+    say("msg.gameOver");
   }
 }
 
@@ -540,10 +554,7 @@ function scheduleCalmDown() {
 function calmDown() {
   const upset = cat.activity === "angry" || cat.activity === "scratching";
   if (!upset || Date.now() < cat.angryUntil) return;
-  cat.message =
-    cat.activity === "angry"
-      ? cat.name + " has calmed down. You can pet " + pronoun().object + " again."
-      : cat.name + " has calmed down.";
+  say(cat.activity === "angry" ? "msg.calmAngry" : "msg.calm");
   cat.activity = "neutral";
   cat.petStreak = 0;
   saveState();
@@ -616,9 +627,9 @@ function switchCat(index) {
 
 function adoptCat() {
   if (game.cats.length >= MAX_CATS || laser) return;
-  game.cats.push(newCat("Cat " + (game.cats.length + 1)));
+  game.cats.push(newCat(t("name.numbered", { n: game.cats.length + 1 })));
   switchCat(game.cats.length - 1);
-  cat.message = "Welcome home, " + cat.name + "! Give your new cat a name in the settings.";
+  say("msg.welcome");
   saveState();
   render();
   openSettings();
@@ -626,7 +637,7 @@ function adoptCat() {
 
 async function removeCat() {
   if (game.cats.length <= 1) return;
-  if (!(await askSure("Remove " + cat.name + "? This can't be undone.", "Yes, remove"))) return;
+  if (!(await askSure(t("confirm.remove", { name: cat.name }), t("confirm.removeYes")))) return;
   stopAnimation();
   for (const key of Object.keys(game.relations)) {
     if (key.split("|").includes(cat.id)) delete game.relations[key];
@@ -663,7 +674,7 @@ function renderSwitcher() {
       badge.className = "relation-badge";
       badge.textContent = RELATIONS[relation].sign;
       button.append(badge);
-      button.title = c.name + " – " + RELATIONS[relation].label;
+      button.title = c.name + " – " + t("rel." + relation);
     }
     button.addEventListener("click", () => switchCat(index));
     row.append(button);
@@ -673,8 +684,8 @@ function renderSwitcher() {
     adopt.type = "button";
     adopt.className = "cat-face adopt";
     adopt.textContent = "+";
-    adopt.title = "Adopt a cat";
-    adopt.setAttribute("aria-label", "Adopt a cat");
+    adopt.title = t("switcher.adopt");
+    adopt.setAttribute("aria-label", t("switcher.adopt"));
     adopt.addEventListener("click", adoptCat);
     row.append(adopt);
   }
@@ -705,6 +716,17 @@ function hideFriend() {
 
 // ---------- Drawing the page ----------
 
+// Mood ids (used by chooseImage) and their translation keys.
+const MOOD_KEYS = {
+  "Very hungry": "mood.veryHungry",
+  Sad: "mood.sad",
+  "Very happy": "mood.veryHappy",
+  Sleepy: "mood.sleepy",
+  Messy: "mood.messy",
+  Jealous: "mood.jealous",
+  Neutral: "mood.neutral",
+};
+
 function getMoods() {
   const moods = [];
   if (cat.hunger >= 80) moods.push(["Very hungry", "🍴️"]);
@@ -732,22 +754,32 @@ function chooseImage(moodNames) {
 
 const $ = (id) => document.getElementById(id);
 
+// Fills in every text on the page marked with data-i18n (and its labels) in the chosen language.
+function applyTexts() {
+  const params = { name: cat.name, gender: cat.gender, age: cat.age };
+  document.documentElement.lang = language;
+  document.title = t("page.title");
+  document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n, params)));
+  document.querySelectorAll("[data-i18n-label]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.i18nLabel, params)));
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => (el.title = t(el.dataset.i18nTitle, params)));
+  document.querySelectorAll("[data-i18n-alt]").forEach((el) => (el.alt = t(el.dataset.i18nAlt, params)));
+}
+
 function render() {
+  applyTexts();
   const gameOver = cat.lives <= 0;
   $("playing-view").hidden = gameOver;
   $("game-over-view").hidden = !gameOver;
 
-  document.querySelectorAll(".name").forEach((el) => (el.textContent = cat.name));
   $("cat-name").textContent = cat.name;
-  $("cat-age").textContent = cat.age;
 
   const moods = getMoods();
   const moodNames = moods.map((m) => m[0]);
-  $("mood").textContent = moods.map(([name, emoji]) => emoji + " " + name).join(", ");
+  $("mood").textContent = moods.map(([id, emoji]) => emoji + " " + t(MOOD_KEYS[id])).join(", ");
   $("birthday-line").hidden = !isPartyTime();
   const health = [];
-  if (cat.sick) health.push("🤒 Sick");
-  if (inPain(cat)) health.push("🦴 Stiff joints");
+  if (cat.sick) health.push(t("health.sick"));
+  if (inPain(cat)) health.push(t("health.stiff"));
   $("health").textContent = health.join(" · ");
   $("health").hidden = health.length === 0;
 
@@ -756,7 +788,7 @@ function render() {
     $(stat + "-bar").style.width = cat[stat] + "%";
   }
 
-  $("message").textContent = cat.message;
+  $("message").textContent = messageText(cat.message);
   renderHistory();
   renderSwitcher();
   $("together-button").hidden = !playFriend();
@@ -773,7 +805,7 @@ function render() {
   $("cat-image").classList.toggle("kitten", cat.age <= KITTEN_AGE);
   $("relations").textContent = game.cats
     .filter((c) => c !== cat && relationOf(cat, c))
-    .map((c) => RELATIONS[relationOf(cat, c)].sign + " " + RELATIONS[relationOf(cat, c)].with + " " + c.name)
+    .map((c) => RELATIONS[relationOf(cat, c)].sign + " " + t("rel." + relationOf(cat, c) + ".with", { name: c.name }))
     .join(" · ");
   const draw = (extra) => drawCat(sprite, cat.color, cat.coat, cat.eyes, { ...look, ...extra });
   catFrames = { normal: draw(), blink: draw({ blink: true }), tail: draw({ tail: true }) };
@@ -786,10 +818,12 @@ function render() {
 function renderHistory() {
   const list = $("history");
   list.replaceChildren();
-  const earlier = (cat.history || []).filter((entry, i) => !(i === 0 && entry.text === cat.message));
+  const earlier = (cat.history || []).filter(
+    (entry, i) => !(i === 0 && sameMessage(entry.message ?? entry.text, cat.message))
+  );
   if (earlier.length === 0) {
     const empty = document.createElement("li");
-    empty.textContent = "No earlier messages yet.";
+    empty.textContent = t("history.empty");
     list.append(empty);
   }
   for (const entry of earlier) {
@@ -797,8 +831,8 @@ function renderHistory() {
     const time = document.createElement("time");
     const when = new Date(entry.time);
     time.dateTime = when.toISOString();
-    time.textContent = when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    item.append(time, entry.text);
+    time.textContent = when.toLocaleTimeString(language, { hour: "2-digit", minute: "2-digit" });
+    item.append(time, messageText(entry.message ?? entry.text));
     list.append(item);
   }
 }
@@ -858,12 +892,12 @@ function maybeKitten(a, b, pair) {
   if (game.cats.length >= MAX_CATS || a.lives <= 0 || b.lives <= 0) return false;
   if (Date.now() - (pair.lastKitten || 0) < KITTEN_GAP_MS || Math.random() >= KITTEN_CHANCE) return false;
   const pick = (options) => options[Math.floor(Math.random() * options.length)];
-  const kitten = newCat("Kitten");
+  const kitten = newCat(t("name.kitten"));
   kitten.color = pick([a.color, b.color]);
   kitten.coat = pick([a.coat, b.coat]);
   kitten.eyes = pick([a.eyes, b.eyes]);
   kitten.personality = pick([a.personality, b.personality]);
-  kitten.message = "Kitten was born to " + a.name + " and " + b.name + "! Give it a name in the settings.";
+  say("msg.kittenBorn", { a: a.name, b: b.name }, kitten);
   game.cats.push(kitten);
   pair.lastKitten = Date.now();
   bondOf(a, kitten).bond = 40; // family starts out as friends
@@ -1085,14 +1119,16 @@ function startLaserGame() {
   area.className = "laser-area";
   area.innerHTML =
     '<p class="laser-score"></p>' +
-    '<button type="button" class="laser-stop">Stop</button>' +
-    '<button type="button" class="laser-dot" aria-label="Laser dot"></button>';
+    '<button type="button" class="laser-stop"></button>' +
+    '<button type="button" class="laser-dot"></button>';
+  area.querySelector(".laser-stop").textContent = t("laser.stop");
+  area.querySelector(".laser-dot").setAttribute("aria-label", t("laser.dot"));
   card.append(area);
 
   const seconds = traits().laserSeconds;
   laser = { area, dot: area.querySelector(".laser-dot"), caught: 0, start: Date.now(), seconds, moveTimer: null };
   cat.activity = "chasing";
-  cat.message = "Catch the laser dot! Click or tap it.";
+  say("msg.laserStart");
   render();
 
   laser.dot.addEventListener("pointerdown", (event) => {
@@ -1107,7 +1143,7 @@ function startLaserGame() {
 
 function updateLaserScore() {
   const left = Math.max(0, laser.seconds - (Date.now() - laser.start) / 1000);
-  laser.area.querySelector(".laser-score").textContent = "Caught: " + laser.caught + " · " + Math.ceil(left) + "s";
+  laser.area.querySelector(".laser-score").textContent = t("laser.score", { caught: laser.caught, seconds: Math.ceil(left) });
   if (left <= 0) endLaserGame();
 }
 
@@ -1179,11 +1215,25 @@ const dropdowns = [
   [eyesInput, CAT_EYES],
   [personalityInput, PERSONALITIES],
 ];
+const DROPDOWN_KEYS = [
+  [colorInput, "color."],
+  [coatInput, "coat."],
+  [eyesInput, "eyes."],
+  [personalityInput, "personality."],
+];
 for (const [select, options] of dropdowns) {
-  for (const [value, info] of Object.entries(options)) {
-    select.add(new Option(info.label || info, value));
+  for (const value of Object.keys(options)) select.add(new Option(value, value));
+}
+const languageInput = $("language-input");
+for (const [code, name] of Object.entries(LANGUAGES)) languageInput.add(new Option(name, code));
+
+// Option names in the chosen language (the language list always shows each language in itself).
+function labelDropdowns() {
+  for (const [select, prefix] of DROPDOWN_KEYS) {
+    for (const option of select.options) option.text = t(prefix + option.value);
   }
 }
+labelDropdowns();
 
 // Show the cat's current settings in the form.
 function fillSettingsForm() {
@@ -1194,6 +1244,7 @@ function fillSettingsForm() {
   flashInput.checked = game.flash !== false;
   illnessInput.checked = game.illness !== false;
   textSizeInput.value = game.textSize;
+  languageInput.value = language;
   contrastInput.value = game.contrast;
   motionInput.checked = game.reduceMotion;
   $("remove-cat").hidden = game.cats.length <= 1;
@@ -1211,12 +1262,12 @@ function fillRelationSettings() {
     row.className = "setting";
     const label = document.createElement("label");
     label.htmlFor = "relation-" + other.id;
-    label.textContent = "With " + other.name + ":";
+    label.textContent = t("rel.with", { name: other.name });
     const select = document.createElement("select");
     select.id = "relation-" + other.id;
     select.dataset.catId = other.id;
-    select.add(new Option("Let it grow", "auto"));
-    for (const [value, info] of Object.entries(RELATIONS)) select.add(new Option(info.label, value));
+    select.add(new Option(t("rel.auto"), "auto"));
+    for (const value of Object.keys(RELATIONS)) select.add(new Option(t("rel." + value), value));
     const pair = game.relations[pairKey(cat, other)];
     select.value = (pair && pair.chosen) || "auto";
     row.append(label, select);
@@ -1231,9 +1282,9 @@ function saveRelationSettings(newAge) {
     chosen: select.value === "auto" ? null : select.value,
   }));
   const couples = choices.filter((choice) => choice.chosen === "couple");
-  if (couples.length > 1) return "A cat can only be in a couple with one other cat.";
+  if (couples.length > 1) return t("err.twoCouples");
   if (couples.length === 1 && (newAge < ADULT_AGE || couples[0].other.age < ADULT_AGE)) {
-    return "Only grown-up cats (age " + ADULT_AGE + " or older) can be a couple.";
+    return t("err.kittenCouple", { age: ADULT_AGE });
   }
   for (const { other, chosen } of choices) {
     if (chosen === "couple") {
@@ -1270,7 +1321,7 @@ $("info-button").addEventListener("click", () => $("info-dialog").showModal());
 // ↺ Reset this cat, after "Are you sure?"
 $("reset-button").addEventListener("click", async () => {
   if (laser) return;
-  const sure = await askSure("This resets " + cat.name + "'s hunger, happiness, energy, cleanliness and lives.", "Yes, reset");
+  const sure = await askSure(t("confirm.reset", { name: cat.name }), t("confirm.resetYes"));
   if (sure) doAction("reset");
 });
 
@@ -1309,7 +1360,7 @@ $("looks-form").addEventListener("submit", (event) => {
   cat.color = colorInput.value in CAT_COLORS ? colorInput.value : "orange";
   cat.coat = coatInput.value in CAT_COATS ? coatInput.value : "solid";
   cat.eyes = eyesInput.value in CAT_EYES ? eyesInput.value : "black";
-  cat.message = cat.name + "'s new look is saved!";
+  say("msg.looksSaved");
   saveState();
   render();
   looksDialog.close();
@@ -1345,12 +1396,15 @@ $("settings-form").addEventListener("submit", (event) => {
     game.contrast = CONTRASTS.includes(contrastInput.value) ? contrastInput.value : "normal";
     game.reduceMotion = motionInput.checked;
     applyDisplaySettings();
-    cat.message = "Settings saved!";
+    game.language = LANGUAGES[languageInput.value] ? languageInput.value : "en";
+    language = game.language;
+    labelDropdowns();
+    say("msg.settingsSaved");
     saveState();
     render();
     settingsDialog.close();
   } else {
-    settingsError.textContent = "Please enter a name and an age from 0 to 30.";
+    settingsError.textContent = t("err.nameAge");
   }
 });
 

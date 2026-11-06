@@ -628,3 +628,17 @@ button:focus-visible {
     transition: none;
   }
 }
+
+/* ---------- Fonts for other scripts ---------- */
+
+/* Japanese: a Japanese pixel font */
+:root[lang="ja"] body {
+  font-family: "DotGothic16", "Pixelify Sans", sans-serif;
+}
+/* Chinese and Korean: no free pixel font, so the device's own font */
+:root[lang="zh"] body {
+  font-family: "Pixelify Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+}
+:root[lang="ko"] body {
+  font-family: "Pixelify Sans", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+}

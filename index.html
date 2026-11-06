@@ -6,228 +6,245 @@
 <title>Cat Game</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap">
+<!-- Pixelify Sans: Latin and Cyrillic; DotGothic16: Japanese (only downloaded when used) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;600&display=swap">
 <!-- Bump ?v= on every update so browsers load the new files, not an old saved copy -->
-<link rel="stylesheet" href="style.css?v=20261106-4">
+<link rel="stylesheet" href="style.css?v=20261106-5">
 </head>
 <body>
+<!-- Texts marked data-i18n (and data-i18n-label/-title/-alt) are filled in from i18n.js and lang/*.js -->
 <div class="game">
   <!-- Top bar: reset on the left; help, looks and settings on the right -->
   <div class="top-bar">
-    <button type="button" id="reset-button" class="icon-button" aria-label="Reset this cat" title="Reset this cat">↺</button>
+    <button type="button" id="reset-button" class="icon-button" data-i18n-label="top.reset" data-i18n-title="top.reset">↺</button>
     <div class="top-bar-right">
-      <button type="button" id="info-button" class="icon-button" aria-label="What the buttons do" title="What the buttons do">ℹ️</button>
-      <button type="button" id="looks-button" class="icon-button" aria-label="Cat's looks" title="Cat's looks"><img id="looks-icon" alt=""></button>
-      <button type="button" id="settings-button" class="icon-button" aria-label="Settings" title="Settings">⚙️</button>
+      <button type="button" id="info-button" class="icon-button" data-i18n-label="top.info" data-i18n-title="top.info">ℹ️</button>
+      <button type="button" id="looks-button" class="icon-button" data-i18n-label="top.looks" data-i18n-title="top.looks"><img id="looks-icon" alt=""></button>
+      <button type="button" id="settings-button" class="icon-button" data-i18n-label="top.settings" data-i18n-title="top.settings">⚙️</button>
     </div>
   </div>
 
   <!-- Your cats: click a face to switch, + to adopt another -->
-  <nav id="cat-switcher" aria-label="Your cats"></nav>
+  <nav id="cat-switcher" data-i18n-label="switcher.label"></nav>
 
   <!-- Shown while the cat still has lives -->
   <section id="playing-view">
     <h1 id="cat-name">Cat</h1>
-    <p class="age">Age: <span id="cat-age">0</span></p>
-    <p id="birthday-line" class="birthday-line" hidden>🎂 Birthday today!</p>
+    <p class="age" data-i18n="age"></p>
+    <p id="birthday-line" class="birthday-line" data-i18n="birthday" hidden></p>
     <p id="relations" class="relations"></p>
 
-    <h3 class="mood">Mood: <span id="mood"></span></h3>
+    <h3 class="mood"><span data-i18n="mood.label"></span> <span id="mood"></span></h3>
 
     <div class="stats">
-      <h3>Hunger: <span id="hunger-value"></span>%</h3>
+      <h3><span data-i18n="stat.hunger"></span>: <span id="hunger-value"></span>%</h3>
       <div class="bar"><div class="hunger" id="hunger-bar"></div></div>
 
-      <h3>Happiness: <span id="happiness-value"></span>%</h3>
+      <h3><span data-i18n="stat.happiness"></span>: <span id="happiness-value"></span>%</h3>
       <div class="bar"><div class="happy" id="happiness-bar"></div></div>
 
-      <h3>Energy: <span id="energy-value"></span>%</h3>
+      <h3><span data-i18n="stat.energy"></span>: <span id="energy-value"></span>%</h3>
       <div class="bar"><div class="energy" id="energy-bar"></div></div>
 
-      <h3>Cleanliness: <span id="cleanliness-value"></span>%</h3>
+      <h3><span data-i18n="stat.cleanliness"></span>: <span id="cleanliness-value"></span>%</h3>
       <div class="bar"><div class="cleanliness" id="cleanliness-bar"></div></div>
     </div>
 
     <div class="message-row">
       <p class="message" id="message"></p>
-      <button type="button" id="history-button" class="tiny-button" aria-label="Earlier messages" aria-expanded="false" aria-controls="history" title="Earlier messages">🕘</button>
+      <button type="button" id="history-button" class="tiny-button" data-i18n-label="history.button" data-i18n-title="history.button" aria-expanded="false" aria-controls="history">🕘</button>
     </div>
     <ol id="history" class="history" hidden></ol>
 
-    <h3>Lives: <span id="lives-value"></span></h3>
+    <h3><span data-i18n="lives"></span>: <span id="lives-value"></span></h3>
     <p id="hearts"></p>
     <p id="health" class="health" hidden></p>
 
     <div id="cat-pictures">
-      <img id="cat-image" alt="Cat">
+      <img id="cat-image" data-i18n-alt="cat.alt">
       <img id="friend-image" alt="" hidden>
     </div>
 
     <div class="actions">
-      <button data-action="vet" id="vet-button" class="vet-button" hidden>🩺 Take <span class="name"></span> to the vet</button>
+      <button data-action="vet" id="vet-button" class="vet-button" data-i18n="btn.vet" hidden></button>
       <section class="action-group" aria-labelledby="care-heading">
-        <h4 id="care-heading">Care</h4>
-        <button data-action="feed">Feed <span class="name"></span></button>
-        <button data-action="brush">Brush <span class="name"></span></button>
-        <button data-action="sleep">Sleep</button>
+        <h4 id="care-heading" data-i18n="group.care"></h4>
+        <button data-action="feed" data-i18n="btn.feed"></button>
+        <button data-action="brush" data-i18n="btn.brush"></button>
+        <button data-action="sleep" data-i18n="btn.sleep"></button>
       </section>
       <section class="action-group" aria-labelledby="play-heading">
-        <h4 id="play-heading">Play</h4>
-        <button data-action="play">Play with <span class="name"></span></button>
-        <button type="button" id="laser-button">Laser dot</button>
-        <button type="button" id="together-button" hidden>Play together</button>
+        <h4 id="play-heading" data-i18n="group.play"></h4>
+        <button data-action="play" data-i18n="btn.play"></button>
+        <button type="button" id="laser-button" data-i18n="btn.laser"></button>
+        <button type="button" id="together-button" data-i18n="btn.together" hidden></button>
       </section>
       <section class="action-group" aria-labelledby="cuddle-heading">
-        <h4 id="cuddle-heading">Cuddle</h4>
-        <button data-action="pet">Pet <span class="name"></span></button>
-        <button data-action="bellyRub">Belly rub</button>
-        <button data-action="meow">Meow</button>
+        <h4 id="cuddle-heading" data-i18n="group.cuddle"></h4>
+        <button data-action="pet" data-i18n="btn.pet"></button>
+        <button data-action="bellyRub" data-i18n="btn.bellyRub"></button>
+        <button data-action="meow" data-i18n="btn.meow"></button>
       </section>
     </div>
   </section>
 
   <!-- Shown when the cat has run out of lives -->
   <section id="game-over-view" hidden>
-    <h1 class="game-over">GAME OVER</h1>
-    <img id="game-over-image" alt="Cat with X eyes">
-    <h2>💔️ <span class="name"></span> ran out of lives 💔️</h2>
-    <button data-action="reset">Restart Game</button>
+    <h1 class="game-over" data-i18n="gameover.title"></h1>
+    <img id="game-over-image" data-i18n-alt="gameover.alt">
+    <h2 data-i18n="gameover.text"></h2>
+    <button data-action="reset" data-i18n="gameover.restart"></button>
   </section>
 
   <!-- Settings: the cat, its relationships, and the whole game -->
   <dialog id="settings-dialog" class="dialog">
-    <button type="button" class="icon-button dialog-close" aria-label="Close settings">✕</button>
-    <h2>Settings</h2>
+    <button type="button" class="icon-button dialog-close" data-i18n-label="close">✕</button>
+    <h2 data-i18n="settings.title"></h2>
     <form id="settings-form">
-      <h3>Cat</h3>
+      <h3 data-i18n="settings.cat"></h3>
       <div class="setting">
-        <label for="name-input">Cat's name:</label>
+        <label for="name-input" data-i18n="settings.name"></label>
         <input type="text" id="name-input" maxlength="30" required>
       </div>
       <div class="setting">
-        <label for="age-input">Cat's age:</label>
+        <label for="age-input" data-i18n="settings.age"></label>
         <input type="number" id="age-input" min="0" max="30" required>
       </div>
       <div class="setting">
-        <label for="gender-input">Choose gender:</label>
+        <label for="gender-input" data-i18n="settings.gender"></label>
         <select id="gender-input">
-          <option value="female">Female</option>
-          <option value="male">Male</option>
-          <option value="none">Not chosen</option>
+          <option value="female" data-i18n="gender.female"></option>
+          <option value="male" data-i18n="gender.male"></option>
+          <option value="none" data-i18n="gender.none"></option>
         </select>
       </div>
       <div class="setting">
-        <label for="personality-input">Personality:</label>
+        <label for="personality-input" data-i18n="settings.personality"></label>
         <select id="personality-input"></select>
       </div>
 
-      <h3 id="relations-heading">Relationships</h3>
+      <h3 id="relations-heading" data-i18n="settings.relationships"></h3>
       <div id="relation-settings"></div>
 
-      <h3>Game (all cats)</h3>
+      <h3 data-i18n="settings.game"></h3>
       <div class="setting">
-        <label for="text-size-input">Text size:</label>
+        <label for="language-input" data-i18n="settings.language"></label>
+        <select id="language-input"></select>
+      </div>
+      <div class="setting">
+        <label for="text-size-input" data-i18n="settings.textSize"></label>
         <select id="text-size-input">
-          <option value="normal">Normal</option>
-          <option value="large">Large</option>
-          <option value="extra-large">Extra large</option>
+          <option value="normal" data-i18n="size.normal"></option>
+          <option value="large" data-i18n="size.large"></option>
+          <option value="extra-large" data-i18n="size.extra-large"></option>
         </select>
       </div>
       <div class="setting">
-        <label for="contrast-input">Contrast:</label>
+        <label for="contrast-input" data-i18n="settings.contrast"></label>
         <select id="contrast-input">
-          <option value="normal">Normal</option>
-          <option value="high">High</option>
-          <option value="dark">Dark</option>
+          <option value="normal" data-i18n="contrast.normal"></option>
+          <option value="high" data-i18n="contrast.high"></option>
+          <option value="dark" data-i18n="contrast.dark"></option>
         </select>
       </div>
       <div class="setting">
-        <label for="motion-input">Reduce motion:</label>
+        <label for="motion-input" data-i18n="settings.motion"></label>
         <input type="checkbox" id="motion-input">
       </div>
       <div class="setting">
-        <label for="flash-input">Red flash when scratched:</label>
+        <label for="flash-input" data-i18n="settings.flash"></label>
         <input type="checkbox" id="flash-input">
       </div>
       <div class="setting">
-        <label for="illness-input">Cats can get ill (colds, sore joints):</label>
+        <label for="illness-input" data-i18n="settings.illness"></label>
         <input type="checkbox" id="illness-input">
       </div>
 
       <p id="settings-error" class="message"></p>
-      <button type="submit">Save Settings</button>
-      <button type="button" id="remove-cat" class="danger-button">Remove this cat</button>
+      <button type="submit" data-i18n="settings.save"></button>
+      <button type="button" id="remove-cat" class="danger-button" data-i18n="settings.remove"></button>
     </form>
   </dialog>
 
   <!-- Looks: color, coat and eyes -->
   <dialog id="looks-dialog" class="dialog">
-    <button type="button" class="icon-button dialog-close" aria-label="Close looks">✕</button>
-    <h2><span class="name"></span>'s looks</h2>
-    <img id="looks-preview" class="looks-preview" alt="Preview of the cat">
+    <button type="button" class="icon-button dialog-close" data-i18n-label="close">✕</button>
+    <h2 data-i18n="looks.title"></h2>
+    <img id="looks-preview" class="looks-preview" data-i18n-alt="looks.preview">
     <form id="looks-form">
       <div class="setting">
-        <label for="color-input">Color:</label>
+        <label for="color-input" data-i18n="looks.color"></label>
         <select id="color-input"></select>
       </div>
       <div class="setting">
-        <label for="coat-input">Coat:</label>
+        <label for="coat-input" data-i18n="looks.coat"></label>
         <select id="coat-input"></select>
       </div>
       <div class="setting">
-        <label for="eyes-input">Eye color:</label>
+        <label for="eyes-input" data-i18n="looks.eyes"></label>
         <select id="eyes-input"></select>
       </div>
-      <button type="submit">Save Looks</button>
+      <button type="submit" data-i18n="looks.save"></button>
     </form>
   </dialog>
 
   <!-- What the buttons do -->
   <dialog id="info-dialog" class="dialog info">
-    <button type="button" class="icon-button dialog-close" aria-label="Close help">✕</button>
-    <h2>How to play</h2>
-    <p>Keep your cat fed, happy, rested and clean. The bars show how your cat is doing, and time keeps passing even when the page is closed.</p>
-    <h3>Care</h3>
+    <button type="button" class="icon-button dialog-close" data-i18n-label="close">✕</button>
+    <h2 data-i18n="info.title"></h2>
+    <p data-i18n="info.intro"></p>
+    <h3 data-i18n="group.care"></h3>
     <dl>
-      <dt>Feed</dt><dd>Less hungry and a bit happier, but a little messy.</dd>
-      <dt>Brush</dt><dd>Cleaner and happier. Some cats don't like it.</dd>
-      <dt>Sleep</dt><dd>Lots of energy back, but the cat wakes up hungry.</dd>
-      <dt>🩺 Vet</dt><dd>Shows up when your cat is sick or has sore joints.</dd>
+      <dt data-i18n="info.feed.term"></dt><dd data-i18n="info.feed"></dd>
+      <dt data-i18n="info.brush.term"></dt><dd data-i18n="info.brush"></dd>
+      <dt data-i18n="info.sleep.term"></dt><dd data-i18n="info.sleep"></dd>
+      <dt data-i18n="info.vet.term"></dt><dd data-i18n="info.vet"></dd>
     </dl>
-    <h3>Play</h3>
+    <h3 data-i18n="group.play"></h3>
     <dl>
-      <dt>Play with</dt><dd>Much happier, but tired, hungry and messy.</dd>
-      <dt>Laser dot</dt><dd>Catch the red dot as many times as you can.</dd>
-      <dt>Play together</dt><dd>Two of your cats play; they can become friends, or rivals.</dd>
+      <dt data-i18n="info.play.term"></dt><dd data-i18n="info.play"></dd>
+      <dt data-i18n="info.laser.term"></dt><dd data-i18n="info.laser"></dd>
+      <dt data-i18n="info.together.term"></dt><dd data-i18n="info.together"></dd>
     </dl>
-    <h3>Cuddle</h3>
+    <h3 data-i18n="group.cuddle"></h3>
     <dl>
-      <dt>Pet</dt><dd>Happier, but too much petting in a row annoys the cat.</dd>
-      <dt>Belly rub</dt><dd>Very happy, or a scratch, depending on the cat.</dd>
-      <dt>Meow</dt><dd>Say hi. A little happier.</dd>
+      <dt data-i18n="info.pet.term"></dt><dd data-i18n="info.pet"></dd>
+      <dt data-i18n="info.bellyRub.term"></dt><dd data-i18n="info.bellyRub"></dd>
+      <dt data-i18n="info.meow.term"></dt><dd data-i18n="info.meow"></dd>
     </dl>
-    <h3>Buttons at the top</h3>
+    <h3 data-i18n="info.top"></h3>
     <dl>
-      <dt>↺</dt><dd>Reset this cat's stats (it asks first).</dd>
-      <dt>Cat faces</dt><dd>Switch between your cats; + adopts a new one.</dd>
-      <dt>Half-white cat</dt><dd>Change the cat's color, coat and eyes.</dd>
-      <dt>⚙️</dt><dd>Name, age, personality, relationships and game settings.</dd>
-      <dt>🕘</dt><dd>Next to the message: the cat's earlier messages.</dd>
+      <dt>↺</dt><dd data-i18n="info.reset"></dd>
+      <dt data-i18n="info.faces.term"></dt><dd data-i18n="info.faces"></dd>
+      <dt data-i18n="info.looks.term"></dt><dd data-i18n="info.looks"></dd>
+      <dt>⚙️</dt><dd data-i18n="info.settings"></dd>
+      <dt>🕘</dt><dd data-i18n="info.history"></dd>
     </dl>
   </dialog>
 
   <!-- "Are you sure?" -->
   <dialog id="confirm-dialog" class="dialog confirm">
     <form method="dialog">
-      <h2>Are you sure?</h2>
+      <h2 data-i18n="confirm.title"></h2>
       <p id="confirm-text"></p>
-      <button value="yes" id="confirm-yes" class="danger-solid">Yes</button>
-      <button value="no" autofocus>No</button>
+      <button value="yes" id="confirm-yes" class="danger-solid"></button>
+      <button value="no" autofocus data-i18n="confirm.no"></button>
     </form>
   </dialog>
 
 </div>
-<script src="sprites.js?v=20261106-4"></script>
-<script src="game.js?v=20261106-4"></script>
+<script src="sprites.js?v=20261106-5"></script>
+<script src="i18n.js?v=20261106-5"></script>
+<script src="lang/da.js?v=20261106-5"></script>
+<script src="lang/de.js?v=20261106-5"></script>
+<script src="lang/ru.js?v=20261106-5"></script>
+<script src="lang/es.js?v=20261106-5"></script>
+<script src="lang/fi.js?v=20261106-5"></script>
+<script src="lang/it.js?v=20261106-5"></script>
+<script src="lang/fr.js?v=20261106-5"></script>
+<script src="lang/zh.js?v=20261106-5"></script>
+<script src="lang/ja.js?v=20261106-5"></script>
+<script src="lang/ko.js?v=20261106-5"></script>
+<script src="game.js?v=20261106-5"></script>
 </body>
 </html>
