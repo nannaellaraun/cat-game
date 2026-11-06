@@ -1,15 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-contrast="normal" data-text-size="normal">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cat Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap">
 <!-- Bump ?v= on every update so browsers load the new files, not an old saved copy -->
-<link rel="stylesheet" href="style.css?v=20261106-3">
+<link rel="stylesheet" href="style.css?v=20261106-4">
 </head>
 <body>
 <div class="game">
-  <button type="button" id="settings-button" class="icon-button" aria-label="Cat settings">⚙️</button>
+  <!-- Top bar: reset on the left; help, looks and settings on the right -->
+  <div class="top-bar">
+    <button type="button" id="reset-button" class="icon-button" aria-label="Reset this cat" title="Reset this cat">↺</button>
+    <div class="top-bar-right">
+      <button type="button" id="info-button" class="icon-button" aria-label="What the buttons do" title="What the buttons do">ℹ️</button>
+      <button type="button" id="looks-button" class="icon-button" aria-label="Cat's looks" title="Cat's looks"><img id="looks-icon" alt=""></button>
+      <button type="button" id="settings-button" class="icon-button" aria-label="Settings" title="Settings">⚙️</button>
+    </div>
+  </div>
 
   <!-- Your cats: click a face to switch, + to adopt another -->
   <nav id="cat-switcher" aria-label="Your cats"></nav>
@@ -17,28 +28,35 @@
   <!-- Shown while the cat still has lives -->
   <section id="playing-view">
     <h1 id="cat-name">Cat</h1>
-    <p>Age: <span id="cat-age">0</span></p>
+    <p class="age">Age: <span id="cat-age">0</span></p>
+    <p id="birthday-line" class="birthday-line" hidden>🎂 Birthday today!</p>
     <p id="relations" class="relations"></p>
 
-    <h3>Mood: <span id="mood"></span></h3>
-    <h3 id="emoji"></h3>
+    <h3 class="mood">Mood: <span id="mood"></span></h3>
 
-    <h3>Hunger: <span id="hunger-value"></span>%</h3>
-    <div class="bar"><div class="hunger" id="hunger-bar"></div></div>
+    <div class="stats">
+      <h3>Hunger: <span id="hunger-value"></span>%</h3>
+      <div class="bar"><div class="hunger" id="hunger-bar"></div></div>
 
-    <h3>Happiness: <span id="happiness-value"></span>%</h3>
-    <div class="bar"><div class="happy" id="happiness-bar"></div></div>
+      <h3>Happiness: <span id="happiness-value"></span>%</h3>
+      <div class="bar"><div class="happy" id="happiness-bar"></div></div>
 
-    <h3>Energy: <span id="energy-value"></span>%</h3>
-    <div class="bar"><div class="energy" id="energy-bar"></div></div>
+      <h3>Energy: <span id="energy-value"></span>%</h3>
+      <div class="bar"><div class="energy" id="energy-bar"></div></div>
 
-    <h3>Cleanliness: <span id="cleanliness-value"></span>%</h3>
-    <div class="bar"><div class="cleanliness" id="cleanliness-bar"></div></div>
+      <h3>Cleanliness: <span id="cleanliness-value"></span>%</h3>
+      <div class="bar"><div class="cleanliness" id="cleanliness-bar"></div></div>
+    </div>
 
-    <p class="message" id="message"></p>
+    <div class="message-row">
+      <p class="message" id="message"></p>
+      <button type="button" id="history-button" class="tiny-button" aria-label="Earlier messages" aria-expanded="false" aria-controls="history" title="Earlier messages">🕘</button>
+    </div>
+    <ol id="history" class="history" hidden></ol>
 
     <h3>Lives: <span id="lives-value"></span></h3>
     <p id="hearts"></p>
+    <p id="health" class="health" hidden></p>
 
     <div id="cat-pictures">
       <img id="cat-image" alt="Cat">
@@ -47,16 +65,24 @@
 
     <div class="actions">
       <button data-action="vet" id="vet-button" class="vet-button" hidden>🩺 Take <span class="name"></span> to the vet</button>
-      <button data-action="feed">Feed <span class="name"></span></button>
-      <button data-action="play">Play with <span class="name"></span></button>
-      <button data-action="pet">Pet <span class="name"></span></button>
-      <button type="button" id="laser-button">Laser dot</button>
-      <button type="button" id="together-button" hidden>Play together</button>
-      <button data-action="bellyRub">Belly rub</button>
-      <button data-action="brush">Brush <span class="name"></span></button>
-      <button data-action="sleep">Sleep</button>
-      <button data-action="meow">Meow</button>
-      <button data-action="reset">Reset</button>
+      <section class="action-group" aria-labelledby="care-heading">
+        <h4 id="care-heading">Care</h4>
+        <button data-action="feed">Feed <span class="name"></span></button>
+        <button data-action="brush">Brush <span class="name"></span></button>
+        <button data-action="sleep">Sleep</button>
+      </section>
+      <section class="action-group" aria-labelledby="play-heading">
+        <h4 id="play-heading">Play</h4>
+        <button data-action="play">Play with <span class="name"></span></button>
+        <button type="button" id="laser-button">Laser dot</button>
+        <button type="button" id="together-button" hidden>Play together</button>
+      </section>
+      <section class="action-group" aria-labelledby="cuddle-heading">
+        <h4 id="cuddle-heading">Cuddle</h4>
+        <button data-action="pet">Pet <span class="name"></span></button>
+        <button data-action="bellyRub">Belly rub</button>
+        <button data-action="meow">Meow</button>
+      </section>
     </div>
   </section>
 
@@ -68,10 +94,12 @@
     <button data-action="reset">Restart Game</button>
   </section>
 
-  <dialog id="settings-dialog">
-    <button type="button" id="settings-close" class="icon-button" aria-label="Close settings">✕</button>
-    <h2>Cat Settings</h2>
+  <!-- Settings: the cat, its relationships, and the whole game -->
+  <dialog id="settings-dialog" class="dialog">
+    <button type="button" class="icon-button dialog-close" aria-label="Close settings">✕</button>
+    <h2>Settings</h2>
     <form id="settings-form">
+      <h3>Cat</h3>
       <div class="setting">
         <label for="name-input">Cat's name:</label>
         <input type="text" id="name-input" maxlength="30" required>
@@ -89,6 +117,56 @@
         </select>
       </div>
       <div class="setting">
+        <label for="personality-input">Personality:</label>
+        <select id="personality-input"></select>
+      </div>
+
+      <h3 id="relations-heading">Relationships</h3>
+      <div id="relation-settings"></div>
+
+      <h3>Game (all cats)</h3>
+      <div class="setting">
+        <label for="text-size-input">Text size:</label>
+        <select id="text-size-input">
+          <option value="normal">Normal</option>
+          <option value="large">Large</option>
+          <option value="extra-large">Extra large</option>
+        </select>
+      </div>
+      <div class="setting">
+        <label for="contrast-input">Contrast:</label>
+        <select id="contrast-input">
+          <option value="normal">Normal</option>
+          <option value="high">High</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+      <div class="setting">
+        <label for="motion-input">Reduce motion:</label>
+        <input type="checkbox" id="motion-input">
+      </div>
+      <div class="setting">
+        <label for="flash-input">Red flash when scratched:</label>
+        <input type="checkbox" id="flash-input">
+      </div>
+      <div class="setting">
+        <label for="illness-input">Cats can get ill (colds, sore joints):</label>
+        <input type="checkbox" id="illness-input">
+      </div>
+
+      <p id="settings-error" class="message"></p>
+      <button type="submit">Save Settings</button>
+      <button type="button" id="remove-cat" class="danger-button">Remove this cat</button>
+    </form>
+  </dialog>
+
+  <!-- Looks: color, coat and eyes -->
+  <dialog id="looks-dialog" class="dialog">
+    <button type="button" class="icon-button dialog-close" aria-label="Close looks">✕</button>
+    <h2><span class="name"></span>'s looks</h2>
+    <img id="looks-preview" class="looks-preview" alt="Preview of the cat">
+    <form id="looks-form">
+      <div class="setting">
         <label for="color-input">Color:</label>
         <select id="color-input"></select>
       </div>
@@ -100,28 +178,56 @@
         <label for="eyes-input">Eye color:</label>
         <select id="eyes-input"></select>
       </div>
-      <div class="setting">
-        <label for="personality-input">Personality:</label>
-        <select id="personality-input"></select>
-      </div>
-      <div class="setting">
-        <label for="flash-input">Red flash when scratched (all cats):</label>
-        <input type="checkbox" id="flash-input">
-      </div>
-      <div class="setting">
-        <label for="illness-input">Cats can get ill (colds, sore joints; all cats):</label>
-        <input type="checkbox" id="illness-input">
-      </div>
-      <h3 id="relations-heading">Relationships</h3>
-      <div id="relation-settings"></div>
-      <p id="settings-error" class="message"></p>
-      <button type="submit">Save Settings</button>
-      <button type="button" id="remove-cat" class="danger-button">Remove this cat</button>
+      <button type="submit">Save Looks</button>
+    </form>
+  </dialog>
+
+  <!-- What the buttons do -->
+  <dialog id="info-dialog" class="dialog info">
+    <button type="button" class="icon-button dialog-close" aria-label="Close help">✕</button>
+    <h2>How to play</h2>
+    <p>Keep your cat fed, happy, rested and clean. The bars show how your cat is doing, and time keeps passing even when the page is closed.</p>
+    <h3>Care</h3>
+    <dl>
+      <dt>Feed</dt><dd>Less hungry and a bit happier, but a little messy.</dd>
+      <dt>Brush</dt><dd>Cleaner and happier. Some cats don't like it.</dd>
+      <dt>Sleep</dt><dd>Lots of energy back, but the cat wakes up hungry.</dd>
+      <dt>🩺 Vet</dt><dd>Shows up when your cat is sick or has sore joints.</dd>
+    </dl>
+    <h3>Play</h3>
+    <dl>
+      <dt>Play with</dt><dd>Much happier, but tired, hungry and messy.</dd>
+      <dt>Laser dot</dt><dd>Catch the red dot as many times as you can.</dd>
+      <dt>Play together</dt><dd>Two of your cats play; they can become friends, or rivals.</dd>
+    </dl>
+    <h3>Cuddle</h3>
+    <dl>
+      <dt>Pet</dt><dd>Happier, but too much petting in a row annoys the cat.</dd>
+      <dt>Belly rub</dt><dd>Very happy, or a scratch, depending on the cat.</dd>
+      <dt>Meow</dt><dd>Say hi. A little happier.</dd>
+    </dl>
+    <h3>Buttons at the top</h3>
+    <dl>
+      <dt>↺</dt><dd>Reset this cat's stats (it asks first).</dd>
+      <dt>Cat faces</dt><dd>Switch between your cats; + adopts a new one.</dd>
+      <dt>Half-white cat</dt><dd>Change the cat's color, coat and eyes.</dd>
+      <dt>⚙️</dt><dd>Name, age, personality, relationships and game settings.</dd>
+      <dt>🕘</dt><dd>Next to the message: the cat's earlier messages.</dd>
+    </dl>
+  </dialog>
+
+  <!-- "Are you sure?" -->
+  <dialog id="confirm-dialog" class="dialog confirm">
+    <form method="dialog">
+      <h2>Are you sure?</h2>
+      <p id="confirm-text"></p>
+      <button value="yes" id="confirm-yes" class="danger-solid">Yes</button>
+      <button value="no" autofocus>No</button>
     </form>
   </dialog>
 
 </div>
-<script src="sprites.js?v=20261106-3"></script>
-<script src="game.js?v=20261106-3"></script>
+<script src="sprites.js?v=20261106-4"></script>
+<script src="game.js?v=20261106-4"></script>
 </body>
 </html>

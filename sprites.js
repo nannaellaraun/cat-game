@@ -596,7 +596,8 @@ function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
   const happy = Boolean(options.happy && sprite.happyEyes);
   const look = options.look === "left" || options.look === "right" ? options.look : "";
   const grey = Boolean(options.grey);
-  const key = [spriteName, colorName, coatName, eyesName, hat, messy, blink, tail, happy, look, grey].join("/");
+  const split = Boolean(options.split); // left half white, right half the given color and coat
+  const key = [spriteName, colorName, coatName, eyesName, hat, messy, blink, tail, happy, look, grey, split].join("/");
   if (spriteCache[key]) return spriteCache[key];
 
   const color = CAT_COLORS[colorName] || CAT_COLORS.orange;
@@ -641,7 +642,10 @@ function drawCat(spriteName, colorName, coatName, eyesName, options = {}) {
       else if (letter === "D") fill = eyes.pupil || color.outline;
       else if (letter === "C") fill = color.closedEyes;
       else if ("YOL".includes(letter)) {
-        fill = furColor(letter, x, y - top, color, coat, sprite.regions);
+        const leftHalf = split && x < grid[0].length / 2;
+        fill = leftHalf
+          ? furColor(letter, x, y - top, CAT_COLORS.white, "solid", sprite.regions)
+          : furColor(letter, x, y - top, color, coat, sprite.regions);
         if (grey && isGreyHair(x, y - top, sprite.regions)) fill = mix(fill, GREY_HAIR, 0.75);
       }
       else fill = FIXED_COLORS[letter];

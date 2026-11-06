@@ -186,10 +186,20 @@ function loadState() {
   if (cats.length === 0) cats.push(newCat("Cat"));
   const current = Math.min(Math.max(0, Number(saved.current) || 0), cats.length - 1);
   const relations = saved.relations && typeof saved.relations === "object" ? saved.relations : {};
-  return { cats, current, flash: saved.flash !== false, illness: saved.illness !== false, relations };
+  return {
+    cats,
+    current,
+    flash: saved.flash !== false,
+    illness: saved.illness !== false,
+    relations,
+    textSize: saved.textSize,
+    contrast: saved.contrast,
+    reduceMotion: saved.reduceMotion === true,
+  };
 }
 
 function saveState() {
+  game.cats.forEach(rememberMessage);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
   } catch {
@@ -199,6 +209,34 @@ function saveState() {
 
 let game = loadState();
 let cat = game.cats[game.current]; // the cat you're looking at
+
+// Text size, contrast and reduce motion apply to the whole page.
+const TEXT_SIZES = ["normal", "large", "extra-large"];
+const CONTRASTS = ["normal", "high", "dark"];
+if (!TEXT_SIZES.includes(game.textSize)) game.textSize = "normal";
+if (!CONTRASTS.includes(game.contrast)) game.contrast = "normal";
+game.reduceMotion = game.reduceMotion === true;
+
+function applyDisplaySettings() {
+  const root = document.documentElement;
+  root.dataset.textSize = game.textSize;
+  root.dataset.contrast = game.contrast;
+  root.classList.toggle("reduce-motion", game.reduceMotion);
+}
+applyDisplaySettings();
+
+// Motion is reduced when the setting is on or the device asks for it.
+const motionReduced = () =>
+  game.reduceMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Each cat keeps its last few messages, newest first, for the 🕘 history.
+const HISTORY_LENGTH = 8;
+function rememberMessage(c) {
+  if (!Array.isArray(c.history)) c.history = [];
+  if (!c.message || (c.history[0] && c.history[0].text === c.message)) return;
+  c.history.unshift({ text: c.message, time: Date.now() });
+  c.history.length = Math.min(c.history.length, HISTORY_LENGTH);
+}
 
 // Runs fn with `cat` set to another cat, e.g. to let time pass for cats in the background.
 function withCat(other, fn) {
@@ -448,7 +486,7 @@ function checkBirthday() {
 let confettiShown = false;
 function showConfetti() {
   confettiShown = true;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (motionReduced()) return;
   const box = document.createElement("div");
   box.className = "confetti";
   const colors = ["#e84a8a", "#4aa8e0", "#f2d530", "#4caf50", "#e0961c"];
@@ -586,9 +624,9 @@ function adoptCat() {
   openSettings();
 }
 
-function removeCat() {
+async function removeCat() {
   if (game.cats.length <= 1) return;
-  if (!confirm("Remove " + cat.name + "? This can't be undone.")) return;
+  if (!(await askSure("Remove " + cat.name + "? This can't be undone.", "Yes, remove"))) return;
   stopAnimation();
   for (const key of Object.keys(game.relations)) {
     if (key.split("|").includes(cat.id)) delete game.relations[key];
@@ -674,11 +712,9 @@ function getMoods() {
   if (cat.happiness >= 80) moods.push(["Very happy", "❤️"]);
   if (cat.energy <= 20) moods.push(["Sleepy", "💤️"]);
   if (cat.cleanliness <= MESSY_AT) moods.push(["Messy", "🛁"]);
-  if (isPartyTime()) moods.push(["Birthday", "🎂"]);
   if (isJealous(cat)) moods.push(["Jealous", "😾"]);
-  if (cat.sick) moods.push(["Sick", "🤒"]);
-  if (inPain(cat)) moods.push(["Stiff joints", "🦴"]);
-  if (cat.happiness >= 30 && cat.happiness <= 70) moods.push(["Neutral", "☁️"]);
+  // Neutral only when nothing else is going on. (Birthday and health have their own lines.)
+  if (moods.length === 0) moods.push(["Neutral", "☁️"]);
   return moods;
 }
 
@@ -707,8 +743,13 @@ function render() {
 
   const moods = getMoods();
   const moodNames = moods.map((m) => m[0]);
-  $("mood").textContent = moodNames.join(", ");
-  $("emoji").textContent = moods.map((m) => m[1]).join(", ");
+  $("mood").textContent = moods.map(([name, emoji]) => emoji + " " + name).join(", ");
+  $("birthday-line").hidden = !isPartyTime();
+  const health = [];
+  if (cat.sick) health.push("🤒 Sick");
+  if (inPain(cat)) health.push("🦴 Stiff joints");
+  $("health").textContent = health.join(" · ");
+  $("health").hidden = health.length === 0;
 
   for (const stat of ["hunger", "happiness", "energy", "cleanliness"]) {
     $(stat + "-value").textContent = cat[stat];
@@ -716,6 +757,7 @@ function render() {
   }
 
   $("message").textContent = cat.message;
+  renderHistory();
   renderSwitcher();
   $("together-button").hidden = !playFriend();
   $("vet-button").hidden = !needsVet(cat);
@@ -738,6 +780,27 @@ function render() {
   catLook = look;
   if (!animation) $("cat-image").src = catFrames.normal;
   $("game-over-image").src = drawCat("gameOver", cat.color, cat.coat, cat.eyes, { grey: cat.age >= OLD_AGE });
+}
+
+// The 🕘 list: the cat's earlier messages, newest first (the current one is already shown).
+function renderHistory() {
+  const list = $("history");
+  list.replaceChildren();
+  const earlier = (cat.history || []).filter((entry, i) => !(i === 0 && entry.text === cat.message));
+  if (earlier.length === 0) {
+    const empty = document.createElement("li");
+    empty.textContent = "No earlier messages yet.";
+    list.append(empty);
+  }
+  for (const entry of earlier) {
+    const item = document.createElement("li");
+    const time = document.createElement("time");
+    const when = new Date(entry.time);
+    time.dateTime = when.toISOString();
+    time.textContent = when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    item.append(time, entry.text);
+    list.append(item);
+  }
 }
 
 // ---------- Age and relationships ----------
@@ -814,7 +877,6 @@ function maybeKitten(a, b, pair) {
 // (Breathing is a CSS animation in style.css.)
 let catFrames = {};
 let catLook = {};
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const showFrame = (name) => {
   if (!animation) $("cat-image").src = catFrames[name];
 };
@@ -866,7 +928,7 @@ function playAnimation(name) {
   const length = steps.reduce((sum, step) => sum + step[2], 0);
   animation = { timers: [] };
 
-  if (reducedMotion) {
+  if (motionReduced()) {
     // With reduced motion the main picture stays still for the same time.
     image.src = draw(still);
   } else {
@@ -890,17 +952,21 @@ function stopAnimation() {
 
 function blinkLoop() {
   setTimeout(() => {
-    showFrame("blink");
-    setTimeout(() => showFrame("normal"), 160);
+    if (!motionReduced()) {
+      showFrame("blink");
+      setTimeout(() => showFrame("normal"), 160);
+    }
     blinkLoop();
   }, randomBetween(2500, 6000));
 }
 
 function tailLoop() {
   setTimeout(() => {
-    [0, 300, 600, 900].forEach((delay, i) =>
-      setTimeout(() => showFrame(i % 2 === 0 ? "tail" : "normal"), delay)
-    );
+    if (!motionReduced()) {
+      [0, 300, 600, 900].forEach((delay, i) =>
+        setTimeout(() => showFrame(i % 2 === 0 ? "tail" : "normal"), delay)
+      );
+    }
     tailLoop();
   }, randomBetween(4000, 8000));
 }
@@ -915,11 +981,10 @@ function sneezeLoop() {
   }, randomBetween(6000, 14000));
 }
 
-if (!reducedMotion) {
-  sneezeLoop();
-  blinkLoop();
-  tailLoop();
-}
+// The loops keep running; each step checks motionReduced(), so the setting works right away.
+sneezeLoop();
+blinkLoop();
+tailLoop();
 
 // ---------- Flying visitors ----------
 
@@ -940,7 +1005,7 @@ function setLook(side) {
 }
 
 function flyVisitor() {
-  if (visitorFlying || laser || cat.lives <= 0 || document.hidden) return;
+  if (visitorFlying || laser || cat.lives <= 0 || document.hidden || motionReduced()) return;
   visitorFlying = true;
   const card = document.querySelector(".game");
   let sky = card.querySelector(".sky");
@@ -999,7 +1064,7 @@ function visitorLoop(first) {
   }, first ? randomBetween(8000, 20000) : randomBetween(20000, 60000));
 }
 
-if (!reducedMotion) visitorLoop(true);
+visitorLoop(true);
 
 // ---------- Laser dot game ----------
 
@@ -1098,13 +1163,16 @@ const nameInput = $("name-input");
 const ageInput = $("age-input");
 const genderInput = $("gender-input");
 
-// Fill the Color, Coat, Eye color and Personality dropdowns from their lists.
+// Fill the Color, Coat, Eye color (Looks) and Personality (Settings) dropdowns from their lists.
 const colorInput = $("color-input");
 const coatInput = $("coat-input");
 const eyesInput = $("eyes-input");
 const personalityInput = $("personality-input");
 const flashInput = $("flash-input");
 const illnessInput = $("illness-input");
+const textSizeInput = $("text-size-input");
+const contrastInput = $("contrast-input");
+const motionInput = $("motion-input");
 const dropdowns = [
   [colorInput, CAT_COLORS],
   [coatInput, CAT_COATS],
@@ -1122,12 +1190,12 @@ function fillSettingsForm() {
   nameInput.value = cat.name;
   ageInput.value = cat.age;
   genderInput.value = cat.gender in PRONOUNS ? cat.gender : "none";
-  colorInput.value = cat.color in CAT_COLORS ? cat.color : "orange";
-  coatInput.value = cat.coat in CAT_COATS ? cat.coat : "solid";
-  eyesInput.value = cat.eyes in CAT_EYES ? cat.eyes : "black";
   personalityInput.value = cat.personality in PERSONALITIES ? cat.personality : "default";
   flashInput.checked = game.flash !== false;
   illnessInput.checked = game.illness !== false;
+  textSizeInput.value = game.textSize;
+  contrastInput.value = game.contrast;
+  motionInput.checked = game.reduceMotion;
   $("remove-cat").hidden = game.cats.length <= 1;
   fillRelationSettings();
 }
@@ -1191,7 +1259,68 @@ function openSettings() {
 $("settings-button").addEventListener("click", openSettings);
 $("remove-cat").addEventListener("click", removeCat);
 $("together-button").addEventListener("click", () => doAction("playTogether"));
-$("settings-close").addEventListener("click", () => settingsDialog.close());
+// Every pop-up's ✕ closes it.
+document.querySelectorAll(".dialog-close").forEach((button) => {
+  button.addEventListener("click", () => button.closest("dialog").close());
+});
+
+// ℹ️ How to play
+$("info-button").addEventListener("click", () => $("info-dialog").showModal());
+
+// ↺ Reset this cat, after "Are you sure?"
+$("reset-button").addEventListener("click", async () => {
+  if (laser) return;
+  const sure = await askSure("This resets " + cat.name + "'s hunger, happiness, energy, cleanliness and lives.", "Yes, reset");
+  if (sure) doAction("reset");
+});
+
+// A small "Are you sure?" pop-up. Resolves to true when the player chooses Yes.
+function askSure(text, yesLabel) {
+  const dialog = $("confirm-dialog");
+  $("confirm-text").textContent = text;
+  $("confirm-yes").textContent = yesLabel;
+  dialog.returnValue = "";
+  dialog.showModal();
+  return new Promise((resolve) => {
+    dialog.addEventListener("close", () => resolve(dialog.returnValue === "yes"), { once: true });
+  });
+}
+
+// Looks: color, coat and eyes, with a live preview.
+const looksDialog = $("looks-dialog");
+$("looks-icon").src = drawCat("face", "black", "tortoiseshell", "green", { split: true });
+
+function updateLooksPreview() {
+  $("looks-preview").src = drawCat("neutral", colorInput.value, coatInput.value, eyesInput.value, {
+    grey: cat.age >= OLD_AGE,
+  });
+}
+$("looks-button").addEventListener("click", () => {
+  if (laser) return;
+  colorInput.value = cat.color in CAT_COLORS ? cat.color : "orange";
+  coatInput.value = cat.coat in CAT_COATS ? cat.coat : "solid";
+  eyesInput.value = cat.eyes in CAT_EYES ? cat.eyes : "black";
+  updateLooksPreview();
+  looksDialog.showModal();
+});
+[colorInput, coatInput, eyesInput].forEach((select) => select.addEventListener("change", updateLooksPreview));
+$("looks-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  cat.color = colorInput.value in CAT_COLORS ? colorInput.value : "orange";
+  cat.coat = coatInput.value in CAT_COATS ? coatInput.value : "solid";
+  cat.eyes = eyesInput.value in CAT_EYES ? eyesInput.value : "black";
+  cat.message = cat.name + "'s new look is saved!";
+  saveState();
+  render();
+  looksDialog.close();
+});
+
+// 🕘 Earlier messages
+$("history-button").addEventListener("click", () => {
+  const list = $("history");
+  list.hidden = !list.hidden;
+  $("history-button").setAttribute("aria-expanded", String(!list.hidden));
+});
 
 $("settings-form").addEventListener("submit", (event) => {
   event.preventDefault(); // stay on the page instead of reloading it
@@ -1208,13 +1337,14 @@ $("settings-form").addEventListener("submit", (event) => {
     cat.name = newName;
     cat.age = newAge;
     cat.gender = genderInput.value in PRONOUNS ? genderInput.value : "none";
-    cat.color = colorInput.value in CAT_COLORS ? colorInput.value : "orange";
-    cat.coat = coatInput.value in CAT_COATS ? coatInput.value : "solid";
-    cat.eyes = eyesInput.value in CAT_EYES ? eyesInput.value : "black";
     cat.personality = personalityInput.value in PERSONALITIES ? personalityInput.value : "default";
     game.flash = flashInput.checked;
     game.illness = illnessInput.checked;
     if (!game.illness) game.cats.forEach((c) => (c.sick = false)); // switching illness off cures colds
+    game.textSize = TEXT_SIZES.includes(textSizeInput.value) ? textSizeInput.value : "normal";
+    game.contrast = CONTRASTS.includes(contrastInput.value) ? contrastInput.value : "normal";
+    game.reduceMotion = motionInput.checked;
+    applyDisplaySettings();
     cat.message = "Settings saved!";
     saveState();
     render();

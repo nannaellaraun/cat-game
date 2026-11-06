@@ -1,76 +1,394 @@
+/* ---------- Colors: Normal, High contrast and Dark ---------- */
+
+:root {
+  --page: #E3D2C1; /* latte */
+  --card: #FBF5EC; /* cream */
+  --text: #2b2420;
+  --accent: #87634c; /* brown title and messages */
+  --button: #b58b70;
+  --button-hover: #87634c;
+  --button-text: #ffffff;
+  --track: #ece6dc; /* empty part of the stat bars */
+  --field: #ffffff;
+  --field-border: #b58b70;
+  --soft-border: #d9c6b4;
+  --hover: #0000000d;
+  --danger: #b83232;
+  --vet: #4a8aa1;
+  --vet-hover: #3a6f82;
+  --shadow: #0002;
+  --hunger: #d69a43;
+  --happy: #329b72;
+  --energy: #4A8AA1;
+  --clean: #9b7fc4;
+}
+
+/* High contrast: darker buttons and text, white card */
+:root[data-contrast="high"] {
+  --page: #d6bfa8;
+  --card: #ffffff;
+  --text: #000000;
+  --accent: #4a2f1e;
+  --button: #5e3f2b;
+  --button-hover: #3b261a;
+  --track: #d3c7b8;
+  --field-border: #5e3f2b;
+  --soft-border: #8a6a52;
+  --danger: #8e1f1f;
+  --vet: #22566a;
+  --vet-hover: #173f4e;
+  --hunger: #a8661a;
+  --happy: #1d7553;
+  --energy: #275f73;
+  --clean: #6c4fa0;
+}
+
+/* Dark: dark brown card and page, light text */
+:root[data-contrast="dark"] {
+  --page: #1d1815;
+  --card: #2e2722;
+  --text: #f1e8dd;
+  --accent: #e2b993;
+  --button: #8a6249;
+  --button-hover: #a8775a;
+  --track: #4a4038;
+  --field: #3a322c;
+  --field-border: #a8775a;
+  --soft-border: #6b5a4c;
+  --hover: #ffffff14;
+  --danger: #ff8a8a;
+  --vet: #3f7f97;
+  --vet-hover: #4f97b1;
+  --shadow: #0006;
+}
+
+/* ---------- Text size: Normal, Large, Extra large ---------- */
+
+:root { font-size: 16px; }
+:root[data-text-size="large"] { font-size: 19px; }
+:root[data-text-size="extra-large"] { font-size: 22px; }
+
+/* ---------- Page and card ---------- */
+
 body {
-  background: #E3D2C1; /* latte */
-  font-family: 'Courier', monospace;
-  font-smooth: never;
-  -webkit-font-smoothing: none;
+  background: var(--page);
+  color: var(--text);
+  font-family: "Pixelify Sans", "Courier New", monospace;
+  font-size: 1rem;
+  -webkit-font-smoothing: none; /* keeps the pixel font crisp */
   text-align: center;
   padding: 40px 16px;
+  margin: 0;
 }
 .game {
-  background: #FBF5EC; /* cream */
+  background: var(--card);
   max-width: 400px;
   margin: auto;
-  padding: 30px;
+  padding: 16px 30px 30px;
   border-radius: 20px;
-  box-shadow: 0 4px 15px #0002;
-  position: relative; /* lets the settings gear sit in the corner */
+  box-shadow: 0 4px 15px var(--shadow);
+  position: relative;
 }
 h1 {
-  color: #87634c;
-}
-.bar {
-  background: #ece6dc;
-  height: 15px;
-  border-radius: 20px;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-.hunger {
-  background: #d69a43;
-  height: 100%;
-}
-.happy {
-  background: #329b72;
-  height: 100%;
-}
-.energy {
-  background: #4A8AA1;
-  height: 100%;
-}
-.cleanliness {
-  background: #9b7fc4;
-  height: 100%;
-}
-.bar > div {
-  transition: width 0.3s;
+  color: var(--accent);
+  margin: 0.3em 0;
 }
 img {
   max-width: 100%;
 }
+
+/* ---------- Top bar: reset, help, looks, settings ---------- */
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.top-bar-right {
+  display: flex;
+  gap: 2px;
+}
+.icon-button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin: 0;
+  font-size: 22px;
+  line-height: 40px;
+  color: var(--accent);
+  background: transparent;
+  border-radius: 50%;
+}
+.icon-button:hover {
+  background: var(--hover);
+}
+#reset-button {
+  font-size: 26px;
+  font-weight: 600;
+}
+#looks-icon {
+  width: 26px;
+  height: 26px;
+  vertical-align: middle;
+  image-rendering: pixelated;
+}
+
+/* ---------- Row of cat faces ---------- */
+
+#cat-switcher {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0;
+}
+.cat-face {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  padding: 4px;
+  margin: 0;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 12px;
+}
+.cat-face:hover {
+  background: var(--hover);
+}
+.cat-face.selected {
+  border-color: var(--button);
+  background: var(--hover);
+}
+.cat-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.cat-face.adopt {
+  color: var(--accent);
+  font-size: 24px;
+  line-height: 1;
+  border: 2px dashed var(--soft-border);
+}
+.relation-badge {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ---------- Name, age, birthday, relationships, mood ---------- */
+
+.age,
+.birthday-line,
+.relations {
+  margin: 0.2em 0;
+}
+.birthday-line,
+.relations {
+  color: var(--accent);
+}
+.relations:empty {
+  display: none;
+}
+.mood {
+  margin: 0.8em 0 0.6em;
+}
+
+/* ---------- Stat bars (a bit closer together) ---------- */
+
+.stats h3 {
+  margin: 0.5em 0 0.25em;
+}
+.bar {
+  background: var(--track);
+  height: 15px;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.bar > div {
+  height: 100%;
+  transition: width 0.3s;
+}
+.hunger { background: var(--hunger); }
+.happy { background: var(--happy); }
+.energy { background: var(--energy); }
+.cleanliness { background: var(--clean); }
+
+/* ---------- Message, history and health ---------- */
+
+.message-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 1em 0;
+}
+.message {
+  color: var(--accent);
+  font-weight: 600;
+  margin: 0;
+}
+.tiny-button {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 26px;
+  background: transparent;
+  border: 1px solid var(--soft-border);
+  border-radius: 50%;
+}
+.tiny-button:hover,
+.tiny-button[aria-expanded="true"] {
+  background: var(--hover);
+}
+.history {
+  list-style: none;
+  margin: -0.5em 0 1em;
+  padding: 8px 12px;
+  border: 1px solid var(--soft-border);
+  border-radius: 10px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.history li + li {
+  margin-top: 4px;
+}
+.history time {
+  color: var(--accent);
+  margin-right: 6px;
+}
+.health {
+  margin: -0.4em 0 0.6em;
+  color: var(--accent);
+}
+
+/* ---------- Buttons ---------- */
+
 button {
-  background: #b58b70;
-  color: white;
+  background: var(--button);
+  color: var(--button-text);
   border: none;
   padding: 12px;
   margin: 5px;
   border-radius: 10px;
   cursor: pointer;
   font-family: inherit;
+  font-size: 0.95rem; /* a little bigger than the browser's default */
 }
 button:hover {
-  background: #87634c;
+  background: var(--button-hover);
 }
-.message {
-  color: #87634c;
-  font-weight: bold;
-}
-.game-over {
-  color: #b83232;
-  font-size: 30px;
-  font-weight: bold;
+button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 
-/* Cat Settings: one setting per line, all fields look the same */
+/* Care / Play / Cuddle groups */
+.action-group {
+  margin-top: 6px;
+}
+.action-group h4 {
+  margin: 8px 0 0;
+  color: var(--accent);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vet-button {
+  display: block;
+  margin: 0 auto 8px;
+  background: var(--vet);
+}
+.vet-button:hover {
+  background: var(--vet-hover);
+}
+.vet-button[hidden] {
+  display: none;
+}
+
+.game-over {
+  color: var(--danger);
+  font-size: 30px;
+  font-weight: 600;
+}
+
+/* ---------- Cat pictures ---------- */
+
+#cat-pictures {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 8px;
+}
+#cat-pictures.together img {
+  max-width: 48%;
+}
+#cat-image {
+  image-rendering: pixelated;
+  transform-origin: bottom center;
+  animation: breathe 3s ease-in-out infinite;
+}
+@keyframes breathe {
+  50% {
+    transform: scaleY(1.02);
+  }
+}
+#friend-image {
+  scale: -1 1; /* faces the other cat */
+  image-rendering: pixelated;
+}
+#cat-image.kitten {
+  scale: 0.75;
+}
+#friend-image.kitten {
+  scale: -0.75 0.75;
+  transform-origin: bottom center;
+}
+
+/* ---------- Pop-ups (settings, looks, help, are you sure) ---------- */
+
+.dialog {
+  position: fixed; /* centered on the screen, not inside the card */
+  width: calc(100% - 32px);
+  max-width: 380px;
+  max-height: calc(100vh - 32px);
+  box-sizing: border-box;
+  padding: 30px 24px 20px;
+  background: var(--card);
+  color: var(--text);
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px var(--shadow);
+  font-family: inherit;
+  text-align: center;
+}
+.dialog::backdrop {
+  background: #0006;
+}
+.dialog h2 {
+  margin-top: 0;
+  color: var(--accent);
+}
+.dialog h3 {
+  margin: 18px 0 8px;
+}
+.dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+#settings-error:empty {
+  display: none;
+}
+
 .setting {
   display: flex;
   align-items: center;
@@ -79,7 +397,7 @@ button:hover {
   text-align: left;
 }
 .setting label {
-  flex: 0 0 9em;
+  flex: 0 1 9em;
 }
 .setting input,
 .setting select {
@@ -89,63 +407,89 @@ button:hover {
   height: 2.2em;
   padding: 0 8px;
   font-family: inherit;
-  font-size: 1em;
-  color: inherit;
-  background: white;
-  border: 2px solid #b58b70;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--field);
+  border: 2px solid var(--field-border);
   border-radius: 8px;
 }
 .setting input:focus,
 .setting select:focus {
   outline: none;
-  border-color: #87634c;
+  border-color: var(--accent);
 }
-
-/* Small round icon buttons: the settings gear and the close cross */
-.icon-button {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 40px;
-  height: 40px;
+/* With bigger text, a dropdown or text field goes under its label so it has room */
+:root:not([data-text-size="normal"]) .setting:has(select, input:not([type="checkbox"])) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+:root:not([data-text-size="normal"]) .setting:has(select, input:not([type="checkbox"])) label {
+  flex-basis: auto;
+}
+.setting input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
   padding: 0;
-  margin: 0;
-  font-size: 22px;
-  line-height: 40px;
-  color: #87634c;
-  background: transparent;
-  border-radius: 50%;
-}
-.icon-button:hover {
-  background: #0001;
+  accent-color: var(--button);
 }
 
-/* Cat Settings pop-up */
-#settings-dialog {
-  position: fixed; /* keep it centered on the screen, not inside the card */
-  width: calc(100% - 32px);
-  max-width: 360px;
-  box-sizing: border-box;
-  padding: 30px 24px 20px;
-  background: #FBF5EC;
-  border: none;
-  border-radius: 20px;
-  box-shadow: 0 4px 15px #0003;
-  font-family: inherit;
-  color: inherit;
+.looks-preview {
+  height: 120px;
+  image-rendering: pixelated;
+  margin-bottom: 12px;
+}
+
+.info {
+  text-align: left;
+}
+.info h2,
+.info > p {
   text-align: center;
 }
-#settings-dialog::backdrop {
-  background: #0005;
+.info dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0;
 }
-#settings-dialog h2 {
-  margin-top: 0;
+.info dt {
+  font-weight: 600;
+  color: var(--accent);
 }
-#settings-error:empty {
+.info dd {
+  margin: 0;
+}
+
+.confirm p {
+  margin-bottom: 18px;
+}
+.danger-solid {
+  background: var(--danger);
+}
+.danger-solid:hover {
+  background: var(--danger);
+  filter: brightness(0.9);
+}
+
+/* Remove a cat: a quieter red button under Save */
+.danger-button {
+  display: block;
+  margin: 12px auto 0;
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+.danger-button:hover {
+  background: var(--hover);
+}
+.danger-button[hidden] {
   display: none;
 }
 
-/* Birthday confetti: little squares falling over the card */
+/* ---------- Birthday confetti ---------- */
+
 .confetti {
   position: absolute;
   inset: 0;
@@ -166,28 +510,8 @@ button:hover {
   }
 }
 
-/* Settings checkbox: a normal-sized box instead of a full-width field */
-.setting input[type="checkbox"] {
-  flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  accent-color: #b58b70;
-}
+/* ---------- Red flash when the cat scratches ---------- */
 
-/* The cat gently breathes */
-#cat-image {
-  image-rendering: pixelated;
-  transform-origin: bottom center;
-  animation: breathe 3s ease-in-out infinite;
-}
-@keyframes breathe {
-  50% {
-    transform: scaleY(1.02);
-  }
-}
-
-/* Red flash when the cat scratches */
 .scratch-flash {
   position: fixed;
   inset: 0;
@@ -206,13 +530,8 @@ button:hover {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  #cat-image {
-    animation: none;
-  }
-}
+/* ---------- Flying visitors ---------- */
 
-/* Flying visitors (butterfly, bird, bee) */
 .sky {
   position: absolute;
   inset: 0;
@@ -225,7 +544,8 @@ button:hover {
   image-rendering: pixelated;
 }
 
-/* Laser dot game: a layer over the card that catches clicks while a round is played */
+/* ---------- Laser dot game ---------- */
+
 .laser-area {
   position: absolute;
   inset: 0;
@@ -240,9 +560,9 @@ button:hover {
   margin: 0;
   padding: 6px 10px;
   border-radius: 8px;
-  background: #fbf5ecdd;
-  color: #87634c;
-  font-weight: bold;
+  background: var(--card);
+  color: var(--accent);
+  font-weight: 600;
 }
 .laser-stop {
   position: absolute;
@@ -277,7 +597,7 @@ button:hover {
 .laser-plus {
   position: absolute;
   color: #c81c28;
-  font-weight: bold;
+  font-weight: 600;
   pointer-events: none;
   animation: laser-plus 0.7s ease-out forwards;
 }
@@ -287,116 +607,24 @@ button:hover {
     opacity: 0;
   }
 }
+
+/* ---------- Reduce motion (setting or device) ---------- */
+
+:root.reduce-motion #cat-image,
+:root.reduce-motion .laser-plus {
+  animation: none;
+}
+:root.reduce-motion .laser-dot,
+:root.reduce-motion .bar > div {
+  transition: none;
+}
 @media (prefers-reduced-motion: reduce) {
-  .laser-dot {
+  #cat-image,
+  .laser-plus {
+    animation: none;
+  }
+  .laser-dot,
+  .bar > div {
     transition: none;
   }
-}
-
-/* Row of cat faces at the top of the card */
-#cat-switcher {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 40px 4px; /* room for the settings gear */
-}
-.cat-face {
-  width: 46px;
-  height: 46px;
-  padding: 4px;
-  margin: 0;
-  background: transparent;
-  border: 2px solid transparent;
-  border-radius: 12px;
-}
-.cat-face:hover {
-  background: #0000000d;
-}
-.cat-face.selected {
-  border-color: #b58b70;
-  background: #b58b7022;
-}
-.cat-face img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-.cat-face.adopt {
-  color: #87634c;
-  font-size: 24px;
-  line-height: 1;
-  border: 2px dashed #d9c6b4;
-}
-
-/* The cat (and a friend while playing together) */
-#cat-pictures {
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 8px;
-}
-#cat-pictures.together img {
-  max-width: 48%;
-}
-#friend-image {
-  scale: -1 1; /* faces the other cat */
-  image-rendering: pixelated;
-}
-
-/* Remove a cat: a quieter red button under Save */
-.danger-button {
-  display: block;
-  margin: 12px auto 0;
-  background: transparent;
-  color: #b83232;
-  border: 1px solid #b83232;
-}
-.danger-button:hover {
-  background: #b832321a;
-}
-
-/* Kittens are drawn a bit smaller */
-#cat-image.kitten {
-  scale: 0.75;
-}
-#friend-image.kitten {
-  scale: -0.75 0.75;
-  transform-origin: bottom center;
-}
-
-/* Relationships: the line under the name and the badges on the faces */
-.relations {
-  color: #87634c;
-  margin-top: -8px;
-}
-.relations:empty {
-  display: none;
-}
-.cat-face {
-  position: relative;
-}
-.relation-badge {
-  position: absolute;
-  right: -6px;
-  bottom: -6px;
-  font-size: 14px;
-  line-height: 1;
-}
-#relations-heading {
-  margin: 18px 0 8px;
-}
-
-/* The vet button stands out while a cat is sick */
-.vet-button {
-  display: block;
-  margin: 0 auto 8px;
-  background: #4a8aa1;
-}
-.vet-button:hover {
-  background: #3a6f82;
-}
-.vet-button[hidden] {
-  display: none;
 }
