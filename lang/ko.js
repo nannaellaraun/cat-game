@@ -163,7 +163,7 @@ TEXTS.ko = {
   "info.relations.term": "분홍 하트",
   "info.relations": "다른 고양이와의 관계: 자연스럽게 두거나 직접 골라요. 빨간 ❤️는 가족이에요. 나이 아래의 \"💕 관계\"를 누르면 볼 수 있어요.",
   "info.settings": "언어, 글자 크기, 글꼴, 짧은 글, 대비, 소리, 움직임 등 (모든 고양이).",
-  "info.history": "메시지 옆: 고양이의 이전 메시지.",
+  "info.history": "고양이의 이전 메시지를 보여 줘요. 메시지 옆에 있어요.",
 
   "confirm.title": "정말요?",
   "confirm.no": "아니요",

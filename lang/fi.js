@@ -162,7 +162,7 @@ TEXTS.fi = {
   "info.relations.term": "Vaaleanpunaiset sydämet",
   "info.relations": "Suhteet muihin kissoihisi: anna niiden kehittyä tai valitse itse. Punainen ❤️ tarkoittaa perhettä. Näet ne napauttamalla \"💕 Suhteet\" kissan iän alla.",
   "info.settings": "Kieli, tekstin koko, fontti, lyhyet tekstit, kontrasti, äänet, liike ja muuta, kaikille kissoille.",
-  "info.history": "Viestin vieressä: kissan aiemmat viestit.",
+  "info.history": "Näyttää kissan aiemmat viestit. Löydät sen viestin vierestä.",
 
   "confirm.title": "Oletko varma?",
   "confirm.no": "Ei",

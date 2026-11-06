@@ -192,7 +192,7 @@ TEXTS.en = {
   "info.relations.term": "Pink hearts",
   "info.relations": "Relationships with your other cats: let them grow or choose them. A red ❤️ means family. To see them, click \"💕 Relationships\" under the cat's age.",
   "info.settings": "Language, text size, font, short texts, contrast, sound, motion and more, for all cats.",
-  "info.history": "Next to the message: the cat's earlier messages.",
+  "info.history": "Shows the cat's earlier messages. You find it next to the message.",
 
   // Are you sure?
   "confirm.title": "Are you sure?",
@@ -392,6 +392,16 @@ function shorten(text) {
     if (short.trim().length >= minimum) break;
   }
   return short.trim();
+}
+
+// How to play with short texts: the first sentence, and only the part before a colon or semicolon
+// ("Another cat needs you: it's very hungry…" → "Another cat needs you.").
+function shortenHelp(text) {
+  const first = shorten(text);
+  const cut = first.search(/\s?[:;：；]/);
+  if (cut < 6) return first; // nothing sensible before the colon: keep the sentence
+  const end = /[。！？]/.test(first) ? "。" : ".";
+  return first.slice(0, cut).trim() + end;
 }
 
 // A message is stored as { key, params } (or a list of them), so it can be shown in any language.

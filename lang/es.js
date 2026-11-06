@@ -165,7 +165,7 @@ TEXTS.es = {
   "info.relations.term": "Corazones rosas",
   "info.relations": "Relaciones con tus otros gatos: deja que crezcan o elígelas tú. Un ❤️ rojo significa familia. Para verlas, pulsa «💕 Relaciones» debajo de la edad del gato.",
   "info.settings": "Idioma, tamaño del texto, letra, textos cortos, contraste, sonido, movimiento y más, para todos los gatos.",
-  "info.history": "Junto al mensaje: los mensajes anteriores del gato.",
+  "info.history": "Muestra los mensajes anteriores del gato. Está junto al mensaje.",
 
   "confirm.title": "¿Seguro?",
   "confirm.no": "No",

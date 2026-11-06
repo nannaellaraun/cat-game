@@ -165,7 +165,7 @@ TEXTS.it = {
   "info.relations.term": "Cuori rosa",
   "info.relations": "Relazioni con gli altri gatti: lasciale crescere o sceglile tu. Un ❤️ rosso indica la famiglia. Per vederle, tocca «💕 Relazioni» sotto l'età del gatto.",
   "info.settings": "Lingua, dimensione del testo, carattere, testi brevi, contrasto, suoni, movimento e altro, per tutti i gatti.",
-  "info.history": "Accanto al messaggio: i messaggi precedenti del gatto.",
+  "info.history": "Mostra i messaggi precedenti del gatto. Si trova accanto al messaggio.",
 
   "confirm.title": "Sei sicuro?",
   "confirm.no": "No",

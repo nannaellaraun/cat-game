@@ -162,7 +162,7 @@ TEXTS.zh = {
   "info.relations.term": "粉色爱心",
   "info.relations": "和其他猫咪的关系：顺其自然或自己选择。红色 ❤️ 表示家人。点击年龄下面的「💕 关系」就能看到。",
   "info.settings": "语言、文字大小、字体、简短文字、对比度、声音、动画等等，适用于所有猫咪。",
-  "info.history": "消息旁边：猫咪之前的消息。",
+  "info.history": "显示猫咪之前的消息。按钮在消息旁边。",
 
   "confirm.title": "确定吗？",
   "confirm.no": "不",

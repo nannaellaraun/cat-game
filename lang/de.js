@@ -161,7 +161,7 @@ TEXTS.de = {
   "info.relations.term": "Rosa Herzen",
   "info.relations": "Beziehungen zu deinen anderen Katzen: wachsen lassen oder selbst wählen. Ein rotes ❤️ bedeutet Familie. Klick unter dem Alter auf \"💕 Beziehungen\", um sie zu sehen.",
   "info.settings": "Sprache, Textgröße, Schrift, kurze Texte, Kontrast, Ton, Bewegung und mehr, für alle Katzen.",
-  "info.history": "Neben der Nachricht: die früheren Nachrichten der Katze.",
+  "info.history": "Zeigt die früheren Nachrichten der Katze. Du findest ihn neben der Nachricht.",
 
   "confirm.title": "Bist du sicher?",
   "confirm.no": "Nein",

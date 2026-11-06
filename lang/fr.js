@@ -161,7 +161,7 @@ TEXTS.fr = {
   "info.relations.term": "Cœurs roses",
   "info.relations": "Relations avec tes autres chats : laisse-les grandir ou choisis-les. Un ❤️ rouge veut dire famille. Pour les voir, touche « 💕 Relations » sous l'âge du chat.",
   "info.settings": "Langue, taille du texte, police, textes courts, contraste, son, animations et plus, pour tous les chats.",
-  "info.history": "À côté du message : les messages précédents du chat.",
+  "info.history": "Montre les messages précédents du chat. Il se trouve à côté du message.",
 
   "confirm.title": "Tu es sûr ?",
   "confirm.no": "Non",

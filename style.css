@@ -473,18 +473,20 @@ button:focus-visible {
 .info > p {
   text-align: center;
 }
+/* Each name on its own line, its explanation underneath */
 .info dl {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 4px 12px;
   margin: 0;
 }
 .info dt {
   font-weight: 600;
   color: var(--accent);
+  margin-top: 10px;
+}
+.info dt:first-child {
+  margin-top: 0;
 }
 .info dd {
-  margin: 0;
+  margin: 2px 0 0;
 }
 
 .confirm p {

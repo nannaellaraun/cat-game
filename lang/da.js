@@ -161,7 +161,7 @@ TEXTS.da = {
   "info.relations.term": "Lyserøde hjerter",
   "info.relations": "Forhold til dine andre katte: lad dem vokse, eller vælg dem selv. Et rødt ❤️ betyder familie. Klik på \"💕 Forhold\" under kattens alder for at se dem.",
   "info.settings": "Sprog, tekststørrelse, skrifttype, korte tekster, kontrast, lyd, bevægelse og mere, for alle katte.",
-  "info.history": "Ved siden af beskeden: kattens tidligere beskeder.",
+  "info.history": "Viser kattens tidligere beskeder. Den sidder ved siden af beskeden.",
 
   "confirm.title": "Er du sikker?",
   "confirm.no": "Nej",

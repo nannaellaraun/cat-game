@@ -970,7 +970,7 @@ function applyTexts() {
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const text = t(el.dataset.i18n, params);
     // Short texts: the explanations in How to play keep only their first sentence.
-    el.textContent = shortTexts && el.matches(".info dd, .info > p") ? shorten(text) : text;
+    el.textContent = shortTexts && el.matches(".info dd, .info > p") ? shortenHelp(text) : text;
   });
   document.querySelectorAll("[data-i18n-label]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.i18nLabel, params)));
   document.querySelectorAll("[data-i18n-title]").forEach((el) => (el.title = t(el.dataset.i18nTitle, params)));
