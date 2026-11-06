@@ -73,6 +73,7 @@ TEXTS.ja = {
   "contrast.normal": "ふつう",
   "contrast.high": "高い",
   "contrast.dark": "ダーク",
+  "settings.sound": "音：",
   "settings.motion": "動きを減らす：",
   "settings.flash": "ひっかかれたら赤く光る：",
   "settings.illness": "ねこが病気になる（かぜ、関節の痛み）：",

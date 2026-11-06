@@ -198,6 +198,7 @@ function loadState() {
     textSize: saved.textSize,
     contrast: saved.contrast,
     reduceMotion: saved.reduceMotion === true,
+    sound: saved.sound !== false,
     language: saved.language,
   };
 }
@@ -220,6 +221,12 @@ const CONTRASTS = ["normal", "high", "dark"];
 if (!TEXT_SIZES.includes(game.textSize)) game.textSize = "normal";
 if (!CONTRASTS.includes(game.contrast)) game.contrast = "normal";
 game.reduceMotion = game.reduceMotion === true;
+game.sound = game.sound !== false; // sound is on unless switched off in settings
+
+// Plays a sound from sound.js, unless sound is switched off.
+function sound(name, seconds) {
+  if (game.sound) playSound(name, seconds);
+}
 if (!LANGUAGES[game.language]) game.language = guessLanguage();
 language = game.language;
 
@@ -315,6 +322,7 @@ const actions = {
       cat.activity = "neutral";
       cat.happiness = up(cat.happiness, 5);
       say("msg.purr");
+      sound("purr", 2);
       nextAnimation = "pet";
     }
   },
@@ -323,6 +331,7 @@ const actions = {
     cat.activity = "neutral";
     cat.happiness = up(cat.happiness, 10);
     say("msg.bellyRub");
+    sound("purr", 3);
     nextAnimation = "belly";
   },
   brush() {
@@ -331,11 +340,13 @@ const actions = {
     cat.cleanliness = up(cat.cleanliness, 30);
     cat.happiness = up(cat.happiness, 5);
     say("msg.brush");
+    sound("brush");
   },
   meow() {
     cat.activity = "neutral";
     cat.happiness = up(cat.happiness, 5);
     say("msg.meow");
+    sound("meow");
   },
   reset() {
     Object.assign(cat, startingStats(cat.name));
@@ -1223,6 +1234,7 @@ const illnessInput = $("illness-input");
 const textSizeInput = $("text-size-input");
 const contrastInput = $("contrast-input");
 const motionInput = $("motion-input");
+const soundInput = $("sound-input");
 const dropdowns = [
   [colorInput, CAT_COLORS],
   [coatInput, CAT_COATS],
@@ -1261,6 +1273,7 @@ function fillSettingsForm() {
   languageInput.value = language;
   contrastInput.value = game.contrast;
   motionInput.checked = game.reduceMotion;
+  soundInput.checked = game.sound;
   $("remove-cat").hidden = game.cats.length <= 1;
   fillRelationSettings();
 }
@@ -1409,6 +1422,7 @@ $("settings-form").addEventListener("submit", (event) => {
     game.textSize = TEXT_SIZES.includes(textSizeInput.value) ? textSizeInput.value : "normal";
     game.contrast = CONTRASTS.includes(contrastInput.value) ? contrastInput.value : "normal";
     game.reduceMotion = motionInput.checked;
+    game.sound = soundInput.checked;
     applyDisplaySettings();
     game.language = LANGUAGES[languageInput.value] ? languageInput.value : "en";
     language = game.language;

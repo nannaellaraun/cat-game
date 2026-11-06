@@ -72,6 +72,7 @@ TEXTS.es = {
   "contrast.normal": "Normal",
   "contrast.high": "Alto",
   "contrast.dark": "Oscuro",
+  "settings.sound": "Sonido:",
   "settings.motion": "Reducir movimiento:",
   "settings.flash": "Destello rojo al arañar:",
   "settings.illness": "Los gatos pueden enfermar (resfriados, articulaciones):",

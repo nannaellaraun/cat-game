@@ -72,6 +72,7 @@ TEXTS.it = {
   "contrast.normal": "Normale",
   "contrast.high": "Alto",
   "contrast.dark": "Scuro",
+  "settings.sound": "Suoni:",
   "settings.motion": "Riduci il movimento:",
   "settings.flash": "Lampo rosso quando graffia:",
   "settings.illness": "I gatti possono ammalarsi (raffreddore, articolazioni):",

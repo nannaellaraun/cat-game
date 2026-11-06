@@ -72,6 +72,7 @@ TEXTS.de = {
   "contrast.normal": "Normal",
   "contrast.high": "Hoch",
   "contrast.dark": "Dunkel",
+  "settings.sound": "Ton:",
   "settings.motion": "Weniger Bewegung:",
   "settings.flash": "Roter Blitz beim Kratzen:",
   "settings.illness": "Katzen können krank werden (Erkältung, Gelenkschmerzen):",

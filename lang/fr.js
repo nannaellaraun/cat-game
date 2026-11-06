@@ -72,6 +72,7 @@ TEXTS.fr = {
   "contrast.normal": "Normal",
   "contrast.high": "Élevé",
   "contrast.dark": "Sombre",
+  "settings.sound": "Son :",
   "settings.motion": "Réduire les animations :",
   "settings.flash": "Flash rouge quand il griffe :",
   "settings.illness": "Les chats peuvent tomber malades (rhume, articulations) :",

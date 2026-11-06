@@ -74,6 +74,7 @@ TEXTS.ru = {
   "contrast.normal": "Обычный",
   "contrast.high": "Высокий",
   "contrast.dark": "Тёмный",
+  "settings.sound": "Звук:",
   "settings.motion": "Меньше движения:",
   "settings.flash": "Красная вспышка при царапине:",
   "settings.illness": "Кошки могут болеть (простуда, суставы):",

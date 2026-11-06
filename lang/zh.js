@@ -73,6 +73,7 @@ TEXTS.zh = {
   "contrast.normal": "正常",
   "contrast.high": "高",
   "contrast.dark": "深色",
+  "settings.sound": "声音：",
   "settings.motion": "减少动画：",
   "settings.flash": "被抓时红色闪光：",
   "settings.illness": "猫咪会生病（感冒、关节痛）：",

@@ -101,6 +101,7 @@ TEXTS.en = {
   "contrast.normal": "Normal",
   "contrast.high": "High",
   "contrast.dark": "Dark",
+  "settings.sound": "Sound:",
   "settings.motion": "Reduce motion:",
   "settings.flash": "Red flash when scratched:",
   "settings.illness": "Cats can get ill (colds, sore joints):",

@@ -74,6 +74,7 @@ TEXTS.ko = {
   "contrast.normal": "보통",
   "contrast.high": "높게",
   "contrast.dark": "어둡게",
+  "settings.sound": "소리:",
   "settings.motion": "움직임 줄이기:",
   "settings.flash": "할퀼 때 빨간 번쩍임:",
   "settings.illness": "고양이가 아플 수 있음 (감기, 관절 통증):",

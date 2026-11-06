@@ -73,6 +73,7 @@ TEXTS.fi = {
   "contrast.normal": "Normaali",
   "contrast.high": "Korkea",
   "contrast.dark": "Tumma",
+  "settings.sound": "Äänet:",
   "settings.motion": "Vähennä liikettä:",
   "settings.flash": "Punainen välähdys raapaisusta:",
   "settings.illness": "Kissat voivat sairastua (flunssa, nivelkivut):",

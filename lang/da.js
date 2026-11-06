@@ -72,6 +72,7 @@ TEXTS.da = {
   "contrast.normal": "Normal",
   "contrast.high": "Høj",
   "contrast.dark": "Mørk",
+  "settings.sound": "Lyd:",
   "settings.motion": "Mindre bevægelse:",
   "settings.flash": "Rødt glimt ved kradsen:",
   "settings.illness": "Katte kan blive syge (forkølelse, ømme led):",
