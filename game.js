@@ -21,6 +21,8 @@ const MAX_CATS = 4;
 const JEALOUS_MS = 10 * 60 * 1000; // a cat ignored this long gets jealous of the others
 const COLD_CHANCE = 0.03; // chance per time step that a cat in bad shape catches a cold
 const SICK_LIFE_MS = 30 * 60 * 1000; // a cold left untreated this long costs a life
+const ARTHRITIS_CHANCE = 0.005; // chance per time step that an old cat gets arthritis
+const PAIN_RELIEF_MS = 12 * 60 * 60 * 1000; // the vet's pain medicine works this long
 
 // ---------- Personalities ----------
 
@@ -99,7 +101,22 @@ const PERSONALITIES = {
 };
 
 // The rules for this cat's personality.
-const traits = () => ({ ...DEFAULT_TRAITS, ...PERSONALITIES[cat.personality] });
+// Old cats get messier, and sore joints (arthritis) make playing harder.
+function traits() {
+  const t = { ...DEFAULT_TRAITS, ...PERSONALITIES[cat.personality] };
+  if (cat.age >= OLD_AGE) {
+    t.timeDirt += 1; // old cats groom themselves less
+    t.mess *= 1.5;
+  }
+  if (inPain(cat)) {
+    t.playJoy = Math.round(t.playJoy / 2);
+    t.playTiredness *= 2;
+    t.laserSeconds = Math.round(t.laserSeconds / 2);
+    t.bellyScratchChance = Math.min(1, t.bellyScratchChance + 0.15); // it hurts
+    t.timeHappiness += 1;
+  }
+  return t;
+}
 
 // ---------- State ----------
 
@@ -133,6 +150,8 @@ function newCat(name) {
     lastBirthday: Date.now(), // the next birthday is 7 days after this
     partyUntil: 0, // the party hat is worn until this time (end of the birthday)
     lastAttention: Date.now(), // when you last did something with this cat (for jealousy)
+    arthritis: false, // old cats can get stiff, sore joints; it doesn't go away
+    painReliefUntil: 0, // pain medicine from the vet works until this time
     ...startingStats(name),
   };
 }
@@ -157,17 +176,17 @@ function loadState() {
   } catch {
     // A broken save starts a new game.
   }
-  if (!saved) return { cats: [newCat("Cat")], current: 0, flash: true, relations: {} };
+  if (!saved) return { cats: [newCat("Cat")], current: 0, flash: true, illness: true, relations: {} };
 
   // Saves from before multiple cats held just one cat.
   if (!Array.isArray(saved.cats)) {
-    return { cats: [repairCat(saved)], current: 0, flash: saved.flash !== false, relations: {} };
+    return { cats: [repairCat(saved)], current: 0, flash: saved.flash !== false, illness: true, relations: {} };
   }
   const cats = saved.cats.filter(Boolean).slice(0, MAX_CATS).map(repairCat);
   if (cats.length === 0) cats.push(newCat("Cat"));
   const current = Math.min(Math.max(0, Number(saved.current) || 0), cats.length - 1);
   const relations = saved.relations && typeof saved.relations === "object" ? saved.relations : {};
-  return { cats, current, flash: saved.flash !== false, relations };
+  return { cats, current, flash: saved.flash !== false, illness: saved.illness !== false, relations };
 }
 
 function saveState() {
@@ -301,11 +320,16 @@ const actions = {
     togetherFriend = friend;
   },
   vet() {
-    if (!cat.sick) return;
+    if (!needsVet(cat)) return;
+    const hadCold = cat.sick;
     cat.sick = false;
+    if (cat.arthritis) cat.painReliefUntil = Date.now() + PAIN_RELIEF_MS;
     cat.activity = "neutral";
     cat.happiness = down(cat.happiness, 10); // cats don't like the vet
-    cat.message = cat.name + " is all better after the vet! " + cat.name + " didn't enjoy the trip, though.";
+    const parts = [];
+    if (hadCold) parts.push(cat.name + " is all better after the vet!");
+    if (cat.arthritis) parts.push("The vet gave " + cat.name + " pain medicine for the stiff joints. It helps for 12 hours.");
+    cat.message = parts.join(" ") + " " + cat.name + " didn't enjoy the trip, though.";
     nextAnimation = "vet";
   },
   laserDone() {
@@ -335,6 +359,15 @@ const actions = {
 // A dirty, very hungry or exhausted cat can catch a cold. Kittens and old cats catch one more
 // easily, and colds go round: the chance doubles while another cat is sick.
 function checkHealth() {
+  if (game.illness === false) {
+    cat.sick = false;
+    return;
+  }
+  // Old cats can develop arthritis, slowly and only once.
+  if (cat.age >= OLD_AGE && !cat.arthritis && Math.random() < ARTHRITIS_CHANCE) {
+    cat.arthritis = true;
+    cat.message = cat.name + " has stiff, sore joints (arthritis) 🦴. The vet can give " + pronoun().object + " pain medicine.";
+  }
   if (cat.sick) {
     cat.happiness = down(cat.happiness, 2);
     cat.energy = down(cat.energy, 2);
@@ -356,6 +389,10 @@ function checkHealth() {
     cat.message = cat.name + " caught a cold! 🤒 Take " + pronoun().object + " to the vet.";
   }
 }
+
+// Arthritis hurts unless the vet's pain medicine is working (and illness is switched on).
+const inPain = (c) => game.illness !== false && c.arthritis && Date.now() >= c.painReliefUntil;
+const needsVet = (c) => game.illness !== false && (c.sick || inPain(c));
 
 function tooSick() {
   cat.message = cat.name + " is too sick to play. Take " + pronoun().object + " to the vet.";
@@ -640,6 +677,7 @@ function getMoods() {
   if (isPartyTime()) moods.push(["Birthday", "🎂"]);
   if (isJealous(cat)) moods.push(["Jealous", "😾"]);
   if (cat.sick) moods.push(["Sick", "🤒"]);
+  if (inPain(cat)) moods.push(["Stiff joints", "🦴"]);
   if (cat.happiness >= 30 && cat.happiness <= 70) moods.push(["Neutral", "☁️"]);
   return moods;
 }
@@ -680,7 +718,7 @@ function render() {
   $("message").textContent = cat.message;
   renderSwitcher();
   $("together-button").hidden = !playFriend();
-  $("vet-button").hidden = !cat.sick;
+  $("vet-button").hidden = !needsVet(cat);
   $("lives-value").textContent = cat.lives;
   $("hearts").textContent = "❤️".repeat(cat.lives) + "💔️".repeat(3 - cat.lives);
   const sprite = chooseImage(moodNames);
@@ -1066,6 +1104,7 @@ const coatInput = $("coat-input");
 const eyesInput = $("eyes-input");
 const personalityInput = $("personality-input");
 const flashInput = $("flash-input");
+const illnessInput = $("illness-input");
 const dropdowns = [
   [colorInput, CAT_COLORS],
   [coatInput, CAT_COATS],
@@ -1088,6 +1127,7 @@ function fillSettingsForm() {
   eyesInput.value = cat.eyes in CAT_EYES ? cat.eyes : "black";
   personalityInput.value = cat.personality in PERSONALITIES ? cat.personality : "default";
   flashInput.checked = game.flash !== false;
+  illnessInput.checked = game.illness !== false;
   $("remove-cat").hidden = game.cats.length <= 1;
   fillRelationSettings();
 }
@@ -1173,6 +1213,8 @@ $("settings-form").addEventListener("submit", (event) => {
     cat.eyes = eyesInput.value in CAT_EYES ? eyesInput.value : "black";
     cat.personality = personalityInput.value in PERSONALITIES ? personalityInput.value : "default";
     game.flash = flashInput.checked;
+    game.illness = illnessInput.checked;
+    if (!game.illness) game.cats.forEach((c) => (c.sick = false)); // switching illness off cures colds
     cat.message = "Settings saved!";
     saveState();
     render();
