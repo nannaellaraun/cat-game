@@ -387,3 +387,16 @@ button:hover {
 #relations-heading {
   margin: 18px 0 8px;
 }
+
+/* The vet button stands out while a cat is sick */
+.vet-button {
+  display: block;
+  margin: 0 auto 8px;
+  background: #4a8aa1;
+}
+.vet-button:hover {
+  background: #3a6f82;
+}
+.vet-button[hidden] {
+  display: none;
+}

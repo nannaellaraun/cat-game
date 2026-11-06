@@ -19,6 +19,8 @@ const MAX_AGE = 30; // same limit as Cat Settings
 const MESSY_AT = 30; // at this cleanliness or lower the cat looks messy
 const MAX_CATS = 4;
 const JEALOUS_MS = 10 * 60 * 1000; // a cat ignored this long gets jealous of the others
+const COLD_CHANCE = 0.03; // chance per time step that a cat in bad shape catches a cold
+const SICK_LIFE_MS = 30 * 60 * 1000; // a cold left untreated this long costs a life
 
 // ---------- Personalities ----------
 
@@ -111,6 +113,8 @@ function startingStats(name) {
     activity: "neutral",
     petStreak: 0, // how many times in a row the cat has been petted
     angryUntil: 0, // time (ms) when an angry cat calms down
+    sick: false, // has a cold
+    sickSince: 0, // when the cold started (or the last life it cost)
     message: name + " is relaxing.",
   };
 }
@@ -210,6 +214,7 @@ const actions = {
     cat.message = cat.name + " enjoyed " + pronoun().possessive + " food!";
   },
   play() {
+    if (cat.sick) return tooSick();
     cat.activity = "playing";
     cat.happiness = up(cat.happiness, traits().playJoy);
     cat.energy = down(cat.energy, traits().playTiredness);
@@ -264,6 +269,7 @@ const actions = {
     Object.assign(cat, startingStats(cat.name));
   },
   playTogether() {
+    if (cat.sick) return tooSick();
     const friend = playFriend();
     if (!friend) return;
     const mine = traits();
@@ -294,6 +300,14 @@ const actions = {
     }
     togetherFriend = friend;
   },
+  vet() {
+    if (!cat.sick) return;
+    cat.sick = false;
+    cat.activity = "neutral";
+    cat.happiness = down(cat.happiness, 10); // cats don't like the vet
+    cat.message = cat.name + " is all better after the vet! " + cat.name + " didn't enjoy the trip, though.";
+    nextAnimation = "vet";
+  },
   laserDone() {
     const caught = lastLaserCatches;
     cat.activity = "chasing";
@@ -312,8 +326,40 @@ const actions = {
     cat.energy = down(cat.energy, t.timeEnergy);
     cat.cleanliness = down(cat.cleanliness, t.timeDirt);
     checkBirthday();
+    checkHealth();
   },
 };
+
+// ---------- Getting sick ----------
+
+// A dirty, very hungry or exhausted cat can catch a cold. Kittens and old cats catch one more
+// easily, and colds go round: the chance doubles while another cat is sick.
+function checkHealth() {
+  if (cat.sick) {
+    cat.happiness = down(cat.happiness, 2);
+    cat.energy = down(cat.energy, 2);
+    if (Date.now() - cat.sickSince >= SICK_LIFE_MS) {
+      cat.lives = Math.max(0, cat.lives - 1);
+      cat.sickSince = Date.now();
+      cat.message = cat.name + " is very sick and lost a life! Take " + pronoun().object + " to the vet.";
+    }
+    return;
+  }
+  const inBadShape = cat.cleanliness <= 20 || cat.hunger >= 80 || cat.energy <= 10;
+  if (!inBadShape) return;
+  let chance = COLD_CHANCE;
+  if (cat.age <= KITTEN_AGE || cat.age >= OLD_AGE) chance *= 2;
+  if (game.cats.some((c) => c !== cat && c.sick && c.lives > 0)) chance *= 2;
+  if (Math.random() < chance) {
+    cat.sick = true;
+    cat.sickSince = Date.now();
+    cat.message = cat.name + " caught a cold! 🤒 Take " + pronoun().object + " to the vet.";
+  }
+}
+
+function tooSick() {
+  cat.message = cat.name + " is too sick to play. Take " + pronoun().object + " to the vet.";
+}
 
 // ---------- Scratching ----------
 
@@ -479,7 +525,7 @@ function giveAttention() {
 
 // The cat to play with: the one that has been ignored the longest.
 function playFriend() {
-  const others = game.cats.filter((c) => c !== cat && c.lives > 0);
+  const others = game.cats.filter((c) => c !== cat && c.lives > 0 && !c.sick);
   return others.sort((a, b) => a.lastAttention - b.lastAttention)[0] || null;
 }
 
@@ -593,6 +639,7 @@ function getMoods() {
   if (cat.cleanliness <= MESSY_AT) moods.push(["Messy", "🛁"]);
   if (isPartyTime()) moods.push(["Birthday", "🎂"]);
   if (isJealous(cat)) moods.push(["Jealous", "😾"]);
+  if (cat.sick) moods.push(["Sick", "🤒"]);
   if (cat.happiness >= 30 && cat.happiness <= 70) moods.push(["Neutral", "☁️"]);
   return moods;
 }
@@ -603,6 +650,7 @@ function chooseImage(moodNames) {
   if (cat.activity === "playing") return "playing";
   if (cat.activity === "chasing") return "chase"; // laser dot game: playing pose without the ball
   if (cat.activity === "sleeping") return "sleepy";
+  if (cat.sick) return "sick";
   if (cat.lives < 3 || moodNames.includes("Sad")) return "sad";
   if (moodNames.includes("Sleepy")) return "sleepy";
   return "neutral";
@@ -632,6 +680,7 @@ function render() {
   $("message").textContent = cat.message;
   renderSwitcher();
   $("together-button").hidden = !playFriend();
+  $("vet-button").hidden = !cat.sick;
   $("lives-value").textContent = cat.lives;
   $("hearts").textContent = "❤️".repeat(cat.lives) + "💔️".repeat(3 - cat.lives);
   const sprite = chooseImage(moodNames);
@@ -746,6 +795,19 @@ const ANIMATIONS = {
     still: ["neutral", { happy: true }],
     steps: repeat([["neutral", { happy: true, tail: true }, 200], ["neutral", { happy: true }, 200]], 5),
   },
+  // into the carrier to the vet, and back out cured
+  vet: {
+    still: ["carrier", {}],
+    steps: [
+      ["carrier", {}, 1800],
+      ["neutral", {}, 400],
+    ],
+  },
+  // Achoo!
+  sneeze: {
+    still: ["sick", {}],
+    steps: [["sneeze", {}, 500]],
+  },
   // lies down, rolls onto its back, then rolls back and sits up
   belly: {
     still: ["belly", {}],
@@ -805,7 +867,18 @@ function tailLoop() {
   }, randomBetween(4000, 8000));
 }
 
+// A sick cat sneezes now and then.
+function sneezeLoop() {
+  setTimeout(() => {
+    if (cat.sick && !animation && !laser && chooseImage(getMoods().map((m) => m[0])) === "sick") {
+      playAnimation("sneeze");
+    }
+    sneezeLoop();
+  }, randomBetween(6000, 14000));
+}
+
 if (!reducedMotion) {
+  sneezeLoop();
   blinkLoop();
   tailLoop();
 }
@@ -898,6 +971,11 @@ let lastLaserCatches = 0; // catches in the round that just ended, for actions.l
 
 function startLaserGame() {
   if (laser || cat.lives <= 0) return;
+  if (cat.sick) {
+    tooSick();
+    render();
+    return;
+  }
   stopAnimation();
   const card = document.querySelector(".game");
   const area = document.createElement("div");

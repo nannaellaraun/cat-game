@@ -1,7 +1,8 @@
 // Pixel-art cat sprites, drawn in the browser so the cat can have any color and coat.
 // Letters: K outline, Y fur, O stripes, L light fur (face/belly/paws), E/F iris of the left/right
 // eye, D pupil, C closed/X eyes,
-// P pink, B tear, R/r/w ball and anger mark, W claws and fangs. Regions are [x0, y0, x1, y1] boxes used by
+// P pink, B tear and sneeze, R/r/w ball, anger mark and thermometer tip, W claws, fangs and glass,
+// h/d carrier wood and bars, V purple gloom lines. Regions are [x0, y0, x1, y1] boxes used by
 // coats like Colorpoint and Van.
 
 const SPRITES = {
@@ -240,6 +241,86 @@ const SPRITES = {
     regions: {ears: [[0, 0, 6, 3], [10, 0, 16, 3]], mask: [[5, 7, 11, 10]], tail: [], paws: []},
     hat: [8, 2], // party hat: middle column and bottom row
   },
+  sick: { // tired eyes, wobbly mouth and purple gloom lines, when the cat has a cold
+    art: [
+      "..KK.........KK.........",
+      ".KYYK.......KYYK....V...",
+      ".KYPYK.....KYPYK..V.V.V.",
+      ".KYYYYKKKKKYYYYK..V.V.V.",
+      "KYYYYYOYYYOYYYYYK.V.V.V.",
+      "KYYYYYYOYOYYYYYYK.V...V.",
+      "KYYYYYYYYYYYYYYYK.......",
+      "KYYCCCYYYYYCCCYYK.......",
+      "KYLLLLLLKLLLLLLYK.......",
+      "KLPPLLLKPKLLLPPLK.......",
+      ".KLLLLKLKLKLLLLK........",
+      "..KKYYYYYYYYYKK.........",
+      "...KYYOYYYOYYK..........",
+      "..KYYYOYLYOYYYK.........",
+      "..KYOYYLLLYYOYK....KK...",
+      ".KYYYYLLLLLYYYYK..KYYK..",
+      ".KYOYYLLLLLYYOYK..KYOK..",
+      ".KYYYYLLLLLYYYYK..KYYK..",
+      ".KYOYKLLLLLKYOYK..KYK...",
+      ".KYYYKLLKLLKYYYK.KYOK...",
+      ".KYYYKLLKLLKYYYKKYYK....",
+      ".KYOYKLLKLLKYOYYYOK.....",
+      ".KLLLKLLKLLKLLLKKK......",
+      "..KKKKKKKKKKKKKK........",
+    ],
+    regions: {ears: [[0, 0, 6, 3], [10, 0, 16, 3]], mask: [[5, 7, 11, 10]], tail: [[15, 14, 21, 21]], paws: [[0, 21, 14, 22]]},
+    hat: [8, 2], // party hat: middle column and bottom row
+  },
+  sneeze: { // Achoo! shown for a moment now and then while sick
+    art: [
+      "..KK.........KK.........",
+      ".KYYK.......KYYK........",
+      ".KYPYK.....KYPYK........",
+      ".KYYYYKKKKKYYYYK........",
+      "KYYYYYOYYYOYYYYYK.......",
+      "KYYYYYYOYOYYYYYYK.......",
+      "KYYCYCYYYYYCYCYYK.......",
+      "KYYYCYYYYYYYCYYYK.......",
+      "KYLLLLLLKLLLLLLYK...B...",
+      "KLPPLLLKKKLLLPPLKB.B....",
+      ".KLLLLLKPKLLLLLK........",
+      "..KKYYYYYYYYYKK...B.B...",
+      "...KYYOYYYOYYK..........",
+      "..KYYYOYLYOYYYK.........",
+      "..KYOYYLLLYYOYK....KK...",
+      ".KYYYYLLLLLYYYYK..KYYK..",
+      ".KYOYYLLLLLYYOYK..KYOK..",
+      ".KYYYYLLLLLYYYYK..KYYK..",
+      ".KYOYKLLLLLKYOYK..KYK...",
+      ".KYYYKLLKLLKYYYK.KYOK...",
+      ".KYYYKLLKLLKYYYKKYYK....",
+      ".KYOYKLLKLLKYOYYYOK.....",
+      ".KLLLKLLKLLKLLLKKK......",
+      "..KKKKKKKKKKKKKK........",
+    ],
+    regions: {ears: [[0, 0, 6, 3], [10, 0, 16, 3]], mask: [[5, 7, 11, 10]], tail: [[15, 14, 21, 21]], paws: [[0, 21, 14, 22]]},
+    hat: [8, 2], // party hat: middle column and bottom row
+  },
+  carrier: { // the pet carrier on the way to the vet; the eyes peek out
+    art: [
+      "........KKKKKKKK........",
+      ".......KhhhhhhhhK.......",
+      "......KhK......KhK......",
+      "..KKKKKKKKKKKKKKKKKKKK..",
+      "..KhhhhhhhhhhhhhhhhhhK..",
+      "..KhKKKKKKKKKKKKKKKKhK..",
+      "..KhKdKdKdKdKdKdKdKKhK..",
+      "..KhKdKdKdKdKdKdKdKKhK..",
+      "..KhKdKEKdKdKdKFKdKKhK..",
+      "..KhKdKdKdKdKdKdKdKKhK..",
+      "..KhKdKdKdKdKdKdKdKKhK..",
+      "..KhKKKKKKKKKKKKKKKKhK..",
+      "..KhhhhhhhhhhhhhhhhhhK..",
+      "..KKKKKKKKKKKKKKKKKKKK..",
+      "...KK..............KK...",
+    ],
+    regions: {ears: [], mask: [], tail: [], paws: []},
+  },
   gameOver: {
     art: [
       "..KK..........KK..",
@@ -339,6 +420,9 @@ const FIXED_COLORS = {
   r: "#780a14", // ball shadow
   w: "#ff9696", // ball highlight
   W: "#ffffff", // claws and fangs
+  h: "#b07c52", // pet carrier
+  d: "#28201a", // carrier bars
+  V: "#8a5cc4", // purple gloom lines when sick
 };
 
 const WHITE = "#fbfbfb";
