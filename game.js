@@ -199,6 +199,8 @@ function loadState() {
     contrast: saved.contrast,
     reduceMotion: saved.reduceMotion === true,
     sound: saved.sound !== false,
+    font: saved.font,
+    shortTexts: saved.shortTexts === true,
     language: saved.language,
   };
 }
@@ -222,6 +224,10 @@ if (!TEXT_SIZES.includes(game.textSize)) game.textSize = "normal";
 if (!CONTRASTS.includes(game.contrast)) game.contrast = "normal";
 game.reduceMotion = game.reduceMotion === true;
 game.sound = game.sound !== false; // sound is on unless switched off in settings
+const FONTS = ["pixel", "atkinson", "lexend"];
+if (!FONTS.includes(game.font)) game.font = "pixel";
+game.shortTexts = game.shortTexts === true;
+shortTexts = game.shortTexts; // used by messageText in i18n.js
 
 // Plays a sound from sound.js, unless sound is switched off.
 function sound(name, seconds) {
@@ -234,6 +240,7 @@ function applyDisplaySettings() {
   const root = document.documentElement;
   root.dataset.textSize = game.textSize;
   root.dataset.contrast = game.contrast;
+  root.dataset.font = game.font;
   root.classList.toggle("reduce-motion", game.reduceMotion);
 }
 applyDisplaySettings();
@@ -636,14 +643,65 @@ function switchCat(index) {
   render();
 }
 
+// The + opens "Make a new cat!"; the cat is only made when the form is sent.
 function adoptCat() {
   if (game.cats.length >= MAX_CATS || laser) return;
-  game.cats.push(newCat(t("name.numbered", { n: game.cats.length + 1 })));
+  $("new-name").value = t("name.numbered", { n: game.cats.length + 1 });
+  $("new-age").value = 1;
+  $("new-gender").value = "none";
+  $("new-personality").value = "default";
+  $("new-color").value = "orange";
+  $("new-coat").value = "solid";
+  $("new-eyes").value = "black";
+  $("newcat-error").textContent = "";
+  updateNewCatPreview();
+  $("newcat-dialog").showModal();
+}
+
+function updateNewCatPreview() {
+  const age = Number($("new-age").value);
+  const preview = $("newcat-preview");
+  preview.src = drawCat("neutral", $("new-color").value, $("new-coat").value, $("new-eyes").value, {
+    grey: age >= OLD_AGE,
+  });
+  preview.classList.toggle("kitten", age <= KITTEN_AGE);
+}
+
+function makeNewCat(event) {
+  event.preventDefault();
+  const name = $("new-name").value.trim();
+  const age = Number($("new-age").value);
+  if (name === "" || !Number.isInteger(age) || age < 0 || age > 30) {
+    $("newcat-error").textContent = t("err.nameAge");
+    return;
+  }
+  const kitty = newCat(name);
+  kitty.age = age;
+  const pickFrom = (value, options, fallback) => (value in options ? value : fallback);
+  kitty.gender = pickFrom($("new-gender").value, PRONOUNS, "none");
+  kitty.personality = pickFrom($("new-personality").value, PERSONALITIES, "default");
+  kitty.color = pickFrom($("new-color").value, CAT_COLORS, "orange");
+  kitty.coat = pickFrom($("new-coat").value, CAT_COATS, "solid");
+  kitty.eyes = pickFrom($("new-eyes").value, CAT_EYES, "black");
+  say("msg.adopted", {}, kitty);
+  game.cats.push(kitty);
+  $("newcat-dialog").close();
   switchCat(game.cats.length - 1);
-  say("msg.welcome");
-  saveState();
-  render();
-  openSettings();
+}
+
+// Clicking the chosen cat's face again: "Delete this cat?", then "Are you sure?"
+function askDelete() {
+  if (game.cats.length <= 1 || laser) return;
+  const dialog = $("delete-dialog");
+  $("delete-face").src = drawCat(cat.lives > 0 ? "face" : "gameOver", cat.color, cat.coat, cat.eyes, {
+    grey: cat.age >= OLD_AGE,
+  });
+  $("delete-name").textContent = cat.name;
+  dialog.returnValue = "";
+  dialog.showModal();
+  dialog.addEventListener("close", () => {
+    if (dialog.returnValue === "yes") removeCat();
+  }, { once: true });
 }
 
 async function removeCat() {
@@ -658,7 +716,6 @@ async function removeCat() {
   cat = game.cats[game.current];
   saveState();
   render();
-  settingsDialog.close();
 }
 
 // A cat needs you when a stat is low (same limits as the moods) or it should see the vet.
@@ -670,6 +727,20 @@ const needsAttention = (c) =>
 function renderSwitcher() {
   const row = $("cat-switcher");
   row.replaceChildren();
+
+  // The little tree on the left opens the family tree.
+  const tree = document.createElement("button");
+  tree.type = "button";
+  tree.className = "cat-face family-button";
+  tree.title = t("family.button");
+  tree.setAttribute("aria-label", t("family.button"));
+  const treeIcon = document.createElement("img");
+  treeIcon.alt = "";
+  treeIcon.src = drawTreeIcon();
+  tree.append(treeIcon);
+  tree.addEventListener("click", openFamilyTree);
+  row.append(tree);
+
   game.cats.forEach((c, index) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -701,7 +772,7 @@ function renderSwitcher() {
       button.title += " – " + t("switcher.needs", { name: c.name });
       button.setAttribute("aria-label", c.name + " – " + t("switcher.needs", { name: c.name }));
     }
-    button.addEventListener("click", () => switchCat(index));
+    button.addEventListener("click", () => (index === game.current ? askDelete() : switchCat(index)));
     row.append(button);
   });
   if (game.cats.length < MAX_CATS) {
@@ -714,6 +785,100 @@ function renderSwitcher() {
     adopt.addEventListener("click", adoptCat);
     row.append(adopt);
   }
+}
+
+// ---------- Family tree ----------
+
+// Generation 0 for cats without (known) parents, 1 for their kittens, and so on.
+function generationOf(c, seen = new Set()) {
+  if (!Array.isArray(c.parents) || seen.has(c)) return 0;
+  seen.add(c);
+  const parents = c.parents.map((id) => game.cats.find((p) => p.id === id)).filter(Boolean);
+  return parents.length ? 1 + Math.max(...parents.map((p) => generationOf(p, seen))) : 1;
+}
+
+function openFamilyTree() {
+  if (laser) return;
+  renderFamilyTree();
+  $("family-dialog").showModal();
+}
+
+// Rows of cats by generation; couples side by side with a 💕, kittens say whose child they are.
+function renderFamilyTree() {
+  const box = $("family-tree");
+  box.replaceChildren();
+
+  const rows = [];
+  for (const c of game.cats) {
+    const generation = generationOf(c);
+    (rows[generation] = rows[generation] || []).push(c);
+  }
+
+  rows.filter(Boolean).forEach((row, rowIndex) => {
+    if (rowIndex > 0) {
+      const trunk = document.createElement("div");
+      trunk.className = "family-trunk";
+      box.append(trunk);
+    }
+    // Put partners next to each other.
+    const ordered = [];
+    for (const c of row) {
+      if (ordered.includes(c)) continue;
+      ordered.push(c);
+      const partner = row.find((other) => other !== c && !ordered.includes(other) && relationOf(c, other) === "couple");
+      if (partner) ordered.push(partner);
+    }
+
+    const line = document.createElement("div");
+    line.className = "family-row";
+    ordered.forEach((c, i) => {
+      if (i > 0 && relationOf(ordered[i - 1], c) === "couple") {
+        const heart = document.createElement("span");
+        heart.className = "family-heart";
+        heart.textContent = "💕";
+        heart.title = t("rel.couple");
+        line.append(heart);
+      }
+      line.append(familyCard(c));
+    });
+    box.append(line);
+  });
+
+  if (!game.cats.some((c) => Array.isArray(c.parents))) {
+    const empty = document.createElement("p");
+    empty.className = "family-empty";
+    empty.textContent = shortTexts ? shorten(t("family.empty")) : t("family.empty");
+    box.append(empty);
+  }
+}
+
+function familyCard(c) {
+  const card = document.createElement("button");
+  card.type = "button";
+  card.className = "family-card" + (c === cat ? " selected" : "");
+  const face = document.createElement("img");
+  face.alt = "";
+  face.src = drawCat(c.lives > 0 ? "face" : "gameOver", c.color, c.coat, c.eyes, { grey: c.age >= OLD_AGE });
+  const name = document.createElement("strong");
+  name.textContent = c.name;
+  const age = document.createElement("small");
+  age.textContent = t("age", { age: c.age });
+  card.append(face, name, age);
+  if (Array.isArray(c.parents)) {
+    const parentName = (id, i) => (game.cats.find((p) => p.id === id) || {}).name || (c.parentNames || [])[i] || "?";
+    const parents = document.createElement("small");
+    parents.textContent = t("family.childOf", {
+      a: parentName(c.parents[0], 0),
+      b: parentName(c.parents[1], 1),
+      gender: c.gender,
+    });
+    card.append(parents);
+  }
+  card.addEventListener("click", () => {
+    $("family-dialog").close();
+    switchCat(game.cats.indexOf(c));
+  });
+  return card;
 }
 
 // Play together: the friend appears next to the cat for a few seconds.
@@ -784,7 +949,11 @@ function applyTexts() {
   const params = { name: cat.name, gender: cat.gender, age: cat.age };
   document.documentElement.lang = language;
   document.title = t("page.title");
-  document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n, params)));
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const text = t(el.dataset.i18n, params);
+    // Short texts: the explanations in How to play keep only their first sentence.
+    el.textContent = shortTexts && el.matches(".info dd, .info > p") ? shorten(text) : text;
+  });
   document.querySelectorAll("[data-i18n-label]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.i18nLabel, params)));
   document.querySelectorAll("[data-i18n-title]").forEach((el) => (el.title = t(el.dataset.i18nTitle, params)));
   document.querySelectorAll("[data-i18n-alt]").forEach((el) => (el.alt = t(el.dataset.i18nAlt, params)));
@@ -922,6 +1091,8 @@ function maybeKitten(a, b, pair) {
   kitten.coat = pick([a.coat, b.coat]);
   kitten.eyes = pick([a.eyes, b.eyes]);
   kitten.personality = pick([a.personality, b.personality]);
+  kitten.parents = [a.id, b.id]; // for the family tree
+  kitten.parentNames = [a.name, b.name]; // in case a parent is removed later
   say("msg.kittenBorn", { a: a.name, b: b.name }, kitten);
   game.cats.push(kitten);
   pair.lastKitten = Date.now();
@@ -1236,12 +1407,20 @@ const contrastInput = $("contrast-input");
 const motionInput = $("motion-input");
 const soundInput = $("sound-input");
 const dropdowns = [
+  [$("new-color"), CAT_COLORS],
+  [$("new-coat"), CAT_COATS],
+  [$("new-eyes"), CAT_EYES],
+  [$("new-personality"), PERSONALITIES],
   [colorInput, CAT_COLORS],
   [coatInput, CAT_COATS],
   [eyesInput, CAT_EYES],
   [personalityInput, PERSONALITIES],
 ];
 const DROPDOWN_KEYS = [
+  [$("new-color"), "color."],
+  [$("new-coat"), "coat."],
+  [$("new-eyes"), "eyes."],
+  [$("new-personality"), "personality."],
   [colorInput, "color."],
   [coatInput, "coat."],
   [eyesInput, "eyes."],
@@ -1270,11 +1449,12 @@ function fillSettingsForm() {
   flashInput.checked = game.flash !== false;
   illnessInput.checked = game.illness !== false;
   textSizeInput.value = game.textSize;
+  $("font-input").value = game.font;
+  $("short-input").checked = game.shortTexts;
   languageInput.value = language;
   contrastInput.value = game.contrast;
   motionInput.checked = game.reduceMotion;
   soundInput.checked = game.sound;
-  $("remove-cat").hidden = game.cats.length <= 1;
   fillRelationSettings();
 }
 
@@ -1335,7 +1515,8 @@ function openSettings() {
   settingsDialog.showModal();
 }
 $("settings-button").addEventListener("click", openSettings);
-$("remove-cat").addEventListener("click", removeCat);
+$("newcat-form").addEventListener("submit", makeNewCat);
+["new-color", "new-coat", "new-eyes", "new-age"].forEach((id) => $(id).addEventListener("input", updateNewCatPreview));
 $("together-button").addEventListener("click", () => doAction("playTogether"));
 // Every pop-up's ✕ closes it.
 document.querySelectorAll(".dialog-close").forEach((button) => {
@@ -1344,6 +1525,7 @@ document.querySelectorAll(".dialog-close").forEach((button) => {
 
 // ℹ️ How to play
 $("info-button").addEventListener("click", () => $("info-dialog").showModal());
+$("info-tree-icon").src = drawTreeIcon();
 
 // ↺ Reset this cat, after "Are you sure?"
 $("reset-button").addEventListener("click", async () => {
@@ -1420,6 +1602,9 @@ $("settings-form").addEventListener("submit", (event) => {
     game.illness = illnessInput.checked;
     if (!game.illness) game.cats.forEach((c) => (c.sick = false)); // switching illness off cures colds
     game.textSize = TEXT_SIZES.includes(textSizeInput.value) ? textSizeInput.value : "normal";
+    game.font = FONTS.includes($("font-input").value) ? $("font-input").value : "pixel";
+    game.shortTexts = $("short-input").checked;
+    shortTexts = game.shortTexts;
     game.contrast = CONTRASTS.includes(contrastInput.value) ? contrastInput.value : "normal";
     game.reduceMotion = motionInput.checked;
     game.sound = soundInput.checked;

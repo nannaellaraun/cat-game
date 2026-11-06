@@ -6,10 +6,11 @@
 <title>Cat Game</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Pixelify Sans: Latin and Cyrillic; DotGothic16: Japanese (only downloaded when used) -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Pixelify+Sans:wght@400;600&display=swap">
+<!-- Pixelify Sans: Latin and Cyrillic; DotGothic16: Japanese; Atkinson Hyperlegible and Lexend: easy-to-read
+     fonts. A font is only downloaded when it's actually used. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=DotGothic16&family=Lexend:wght@400;600&family=Pixelify+Sans:wght@400;600&display=swap">
 <!-- Bump ?v= on every update so browsers load the new files, not an old saved copy -->
-<link rel="stylesheet" href="style.css?v=20261106-7">
+<link rel="stylesheet" href="style.css?v=20261106-11">
 </head>
 <body>
 <!-- Texts marked data-i18n (and data-i18n-label/-title/-alt) are filled in from i18n.js and lang/*.js -->
@@ -140,6 +141,18 @@
         </select>
       </div>
       <div class="setting">
+        <label for="font-input" data-i18n="settings.font"></label>
+        <select id="font-input">
+          <option value="pixel" data-i18n="font.pixel"></option>
+          <option value="atkinson" data-i18n="font.atkinson"></option>
+          <option value="lexend" data-i18n="font.lexend"></option>
+        </select>
+      </div>
+      <div class="setting">
+        <label for="short-input" data-i18n="settings.short"></label>
+        <input type="checkbox" id="short-input">
+      </div>
+      <div class="setting">
         <label for="contrast-input" data-i18n="settings.contrast"></label>
         <select id="contrast-input">
           <option value="normal" data-i18n="contrast.normal"></option>
@@ -166,7 +179,6 @@
 
       <p id="settings-error" class="message"></p>
       <button type="submit" data-i18n="settings.save"></button>
-      <button type="button" id="remove-cat" class="danger-button" data-i18n="settings.remove"></button>
     </form>
   </dialog>
 
@@ -220,10 +232,73 @@
     <dl>
       <dt>↺</dt><dd data-i18n="info.reset"></dd>
       <dt data-i18n="info.faces.term"></dt><dd data-i18n="info.faces"></dd>
+      <dt><img class="info-icon" id="info-tree-icon" alt=""> <span data-i18n="info.tree.term"></span></dt><dd data-i18n="info.tree"></dd>
+      <dt><span class="info-alert">!</span> <span data-i18n="info.alert.term"></span></dt><dd data-i18n="info.alert"></dd>
       <dt data-i18n="info.looks.term"></dt><dd data-i18n="info.looks"></dd>
       <dt>⚙️</dt><dd data-i18n="info.settings"></dd>
       <dt>🕘</dt><dd data-i18n="info.history"></dd>
     </dl>
+  </dialog>
+
+  <!-- Make a new cat (the + in the cat row) -->
+  <dialog id="newcat-dialog" class="dialog">
+    <button type="button" class="icon-button dialog-close" data-i18n-label="close">✕</button>
+    <h2 data-i18n="newcat.title"></h2>
+    <img id="newcat-preview" class="looks-preview" data-i18n-alt="looks.preview">
+    <form id="newcat-form">
+      <div class="setting">
+        <label for="new-name" data-i18n="settings.name"></label>
+        <input type="text" id="new-name" maxlength="30" required>
+      </div>
+      <div class="setting">
+        <label for="new-age" data-i18n="settings.age"></label>
+        <input type="number" id="new-age" min="0" max="30" required>
+      </div>
+      <div class="setting">
+        <label for="new-gender" data-i18n="settings.gender"></label>
+        <select id="new-gender">
+          <option value="female" data-i18n="gender.female"></option>
+          <option value="male" data-i18n="gender.male"></option>
+          <option value="none" data-i18n="gender.none"></option>
+        </select>
+      </div>
+      <div class="setting">
+        <label for="new-personality" data-i18n="settings.personality"></label>
+        <select id="new-personality"></select>
+      </div>
+      <div class="setting">
+        <label for="new-color" data-i18n="looks.color"></label>
+        <select id="new-color"></select>
+      </div>
+      <div class="setting">
+        <label for="new-coat" data-i18n="looks.coat"></label>
+        <select id="new-coat"></select>
+      </div>
+      <div class="setting">
+        <label for="new-eyes" data-i18n="looks.eyes"></label>
+        <select id="new-eyes"></select>
+      </div>
+      <p id="newcat-error" class="message"></p>
+      <button type="submit" data-i18n="newcat.create"></button>
+    </form>
+  </dialog>
+
+  <!-- Delete this cat? (click the chosen cat's face again) -->
+  <dialog id="delete-dialog" class="dialog confirm">
+    <form method="dialog">
+      <h2 data-i18n="delete.title"></h2>
+      <img id="delete-face" class="delete-face" alt="">
+      <p id="delete-name" class="delete-name"></p>
+      <button value="yes" class="danger-solid" data-i18n="yes"></button>
+      <button value="no" autofocus data-i18n="confirm.no"></button>
+    </form>
+  </dialog>
+
+  <!-- Family tree -->
+  <dialog id="family-dialog" class="dialog family">
+    <button type="button" class="icon-button dialog-close" data-i18n-label="close">✕</button>
+    <h2 data-i18n="family.title"></h2>
+    <div id="family-tree"></div>
   </dialog>
 
   <!-- "Are you sure?" -->
@@ -237,19 +312,19 @@
   </dialog>
 
 </div>
-<script src="sprites.js?v=20261106-7"></script>
-<script src="sound.js?v=20261106-7"></script>
-<script src="i18n.js?v=20261106-7"></script>
-<script src="lang/da.js?v=20261106-7"></script>
-<script src="lang/de.js?v=20261106-7"></script>
-<script src="lang/ru.js?v=20261106-7"></script>
-<script src="lang/es.js?v=20261106-7"></script>
-<script src="lang/fi.js?v=20261106-7"></script>
-<script src="lang/it.js?v=20261106-7"></script>
-<script src="lang/fr.js?v=20261106-7"></script>
-<script src="lang/zh.js?v=20261106-7"></script>
-<script src="lang/ja.js?v=20261106-7"></script>
-<script src="lang/ko.js?v=20261106-7"></script>
-<script src="game.js?v=20261106-7"></script>
+<script src="sprites.js?v=20261106-11"></script>
+<script src="sound.js?v=20261106-11"></script>
+<script src="i18n.js?v=20261106-11"></script>
+<script src="lang/da.js?v=20261106-11"></script>
+<script src="lang/de.js?v=20261106-11"></script>
+<script src="lang/ru.js?v=20261106-11"></script>
+<script src="lang/es.js?v=20261106-11"></script>
+<script src="lang/fi.js?v=20261106-11"></script>
+<script src="lang/it.js?v=20261106-11"></script>
+<script src="lang/fr.js?v=20261106-11"></script>
+<script src="lang/zh.js?v=20261106-11"></script>
+<script src="lang/ja.js?v=20261106-11"></script>
+<script src="lang/ko.js?v=20261106-11"></script>
+<script src="game.js?v=20261106-11"></script>
 </body>
 </html>

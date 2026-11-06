@@ -754,3 +754,38 @@ function drawCritter(name, frame) {
   });
   return (spriteCache[key] = canvas.toDataURL());
 }
+
+// ---------- Family tree button ----------
+
+// A little pixel tree. g leaves, l light leaves, K outline, t trunk.
+const TREE_ICON = [
+  "...KKKK...",
+  "..KglggK..",
+  ".KggggglK.",
+  "KgglgggggK",
+  "KggggglggK",
+  ".KglggggK.",
+  "..KKKtKK..",
+  "....Kt....",
+  "....Kt....",
+  "...KKttK..",
+];
+const TREE_COLORS = { K: "#2f4a24", g: "#4f9a3a", l: "#7fc95a", t: "#8a5a2b" };
+
+function drawTreeIcon() {
+  const key = "tree-icon";
+  if (spriteCache[key]) return spriteCache[key];
+  const scale = 4;
+  const canvas = document.createElement("canvas");
+  canvas.width = TREE_ICON[0].length * scale;
+  canvas.height = TREE_ICON.length * scale;
+  const ctx = canvas.getContext("2d");
+  TREE_ICON.forEach((row, y) => {
+    [...row].forEach((letter, x) => {
+      if (!TREE_COLORS[letter]) return;
+      ctx.fillStyle = TREE_COLORS[letter];
+      ctx.fillRect(x * scale, y * scale, scale, scale);
+    });
+  });
+  return (spriteCache[key] = canvas.toDataURL());
+}

@@ -33,6 +33,10 @@ TEXTS.en = {
   "top.settings": "Settings",
   "switcher.label": "Your cats",
   "switcher.adopt": "Adopt a cat",
+  "family.title": "Family tree",
+  "family.button": "Family tree",
+  "family.childOf": "Child of {a} and {b}",
+  "family.empty": "No kittens yet. When two grown-up cats become a couple, they can have kittens when they play together.",
   "switcher.needs": "{name} needs you!",
 
   // Main screen
@@ -103,6 +107,15 @@ TEXTS.en = {
   "contrast.dark": "Dark",
   "settings.sound": "Sound:",
   "settings.motion": "Reduce motion:",
+  "settings.font": "Font:",
+  "font.pixel": "Pixel",
+  "font.atkinson": "Easy to read (Atkinson)",
+  "font.lexend": "Easy to read (Lexend)",
+  "settings.short": "Short texts:",
+  "newcat.title": "Make a new cat!",
+  "newcat.create": "Make cat",
+  "delete.title": "Delete this cat?",
+  "yes": "Yes",
   "settings.flash": "Red flash when scratched:",
   "settings.illness": "Cats can get ill (colds, sore joints):",
   "settings.save": "Save Settings",
@@ -147,10 +160,14 @@ TEXTS.en = {
   "info.top": "Buttons at the top",
   "info.reset": "Reset this cat's stats (it asks first).",
   "info.faces.term": "Cat faces",
-  "info.faces": "Switch between your cats; + adopts a new one.",
+  "info.faces": "Switch between your cats; + makes a new one. Click the chosen cat's face again to delete it.",
+  "info.tree.term": "Family tree",
+  "info.tree": "Shows your cats' families: couples and their kittens. Click a cat to go to it.",
+  "info.alert.term": "Red !",
+  "info.alert": "Another cat needs you: it's very hungry, sad, tired, dirty or should see the vet.",
   "info.looks.term": "Half-white cat",
   "info.looks": "Change the cat's color, coat and eyes.",
-  "info.settings": "Name, age, personality, relationships and game settings.",
+  "info.settings": "Name, age, personality and relationships, plus language, text size, font, short texts, contrast, sound, motion and more.",
   "info.history": "Next to the message: the cat's earlier messages.",
 
   // Are you sure?
@@ -306,6 +323,7 @@ TEXTS.en = {
   },
   "msg.calm": "{name} has calmed down.",
   "msg.welcome": "Welcome home, {name}! Give your new cat a name in the settings.",
+  "msg.adopted": "Welcome home, {name}!",
   "msg.looksSaved": "{name}'s new look is saved!",
   "msg.settingsSaved": "Settings saved!",
 };
@@ -334,12 +352,34 @@ function t(key, params = {}) {
     .replace(/\{(\w+)\}/g, (all, name) => (params[name] ?? all));
 }
 
+// "Short texts" setting: messages and help texts show only their first sentence.
+let shortTexts = false;
+
+// Keeps the first sentence. A very short one ("Ouch!") keeps the next sentence too, so it still
+// makes sense. Works for . ! ? and the Chinese/Japanese 。！？ (which have no space after them).
+function shorten(text) {
+  const sentences = text.match(/[^.!?。！？]+[.!?。！？]+[»”"')）]*\s*|[^.!?。！？]+$/g);
+  if (!sentences) return text;
+  // Chinese, Japanese and Korean say a lot in few characters, so "very short" is shorter there.
+  const minimum = /[\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7a3]/.test(text) ? 6 : 15;
+  let short = "";
+  for (const sentence of sentences) {
+    short += sentence;
+    if (short.trim().length >= minimum) break;
+  }
+  return short.trim();
+}
+
 // A message is stored as { key, params } (or a list of them), so it can be shown in any language.
 function messageText(message) {
   if (!message) return "";
-  if (typeof message === "string") return message; // saved by an older version
-  if (Array.isArray(message)) return message.map(messageText).join(" ");
-  return t(message.key, message.params);
+  if (typeof message === "string") return shortTexts ? shorten(message) : message; // saved by an older version
+  if (Array.isArray(message)) {
+    // With short texts, only the first part of a message made of several parts.
+    return shortTexts ? messageText(message[0]) : message.map(messageText).join(" ");
+  }
+  const text = t(message.key, message.params);
+  return shortTexts ? shorten(text) : text;
 }
 
 // The browser's language if we have it, otherwise English.
