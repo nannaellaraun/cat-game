@@ -4,6 +4,9 @@ TEXTS.zh = {
   "page.title": "猫咪游戏",
 
   "top.reset": "重置这只猫",
+  "top.pause": "暂停",
+  "top.resume": "继续",
+  "paused.banner": "⏸ 已暂停——所有猫咪的时间都停止了。按 ▶ 继续。",
   "top.info": "按钮的作用",
   "top.looks": "猫咪外观",
   "top.settings": "设置",
@@ -147,6 +150,7 @@ TEXTS.zh = {
   "info.meow.term": "喵",
   "info.meow": "打个招呼，稍微开心一点。",
   "info.top": "顶部的按钮",
+  "info.pause": "暂停游戏：所有猫咪的时间都会停止，直到你再按一次。",
   "info.reset": "重置这只猫的数值（会先询问）。",
   "info.faces.term": "猫咪头像",
   "info.faces": "在猫咪之间切换；+ 创建一只新猫。再次点击当前猫咪的头像可以删除它。",

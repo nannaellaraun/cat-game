@@ -201,6 +201,8 @@ function loadState() {
     sound: saved.sound !== false,
     font: saved.font,
     shortTexts: saved.shortTexts === true,
+    paused: saved.paused === true,
+    pausedAt: Number(saved.pausedAt) || 0,
     language: saved.language,
   };
 }
@@ -229,6 +231,8 @@ if (game.font === "atkinson") game.font = "lexend"; // that font was removed; ke
 if (!FONTS.includes(game.font)) game.font = "pixel";
 game.shortTexts = game.shortTexts === true;
 shortTexts = game.shortTexts; // used by messageText in i18n.js
+game.paused = game.paused === true;
+if (game.paused && !game.pausedAt) game.pausedAt = Date.now();
 
 // Plays a sound from sound.js, unless sound is switched off.
 function sound(name, seconds) {
@@ -571,6 +575,7 @@ function scheduleCalmDown() {
 }
 
 function calmDown() {
+  if (game.paused) return; // continuing the game sets new calm-down timers
   const upset = cat.activity === "angry" || cat.activity === "scratching";
   if (!upset || Date.now() < cat.angryUntil) return;
   say(cat.activity === "angry" ? "msg.calmAngry" : "msg.calm");
@@ -581,6 +586,7 @@ function calmDown() {
 }
 
 function doAction(name) {
+  if (game.paused && name !== "reset") return; // nothing happens while paused (resetting still works)
   if (name !== "timePassed") stopAnimation();
   // Doing anything else breaks the petting streak; time passing doesn't.
   if (name !== "pet" && name !== "timePassed") cat.petStreak = 0;
@@ -601,12 +607,48 @@ function doAction(name) {
 
 // Time passes for every cat, also the ones you're not looking at.
 function timePasses() {
+  if (game.paused) {
+    render(); // ⏸ time stands still, but the page is still drawn
+    return;
+  }
   for (const c of game.cats) {
     if (c.lives > 0) {
       withCat(c, () => {
         actions.timePassed();
         applyRules();
       });
+    }
+  }
+  saveState();
+  render();
+}
+
+// ---------- Pause ----------
+
+// ⏸ freezes time for all cats; ▶ continues where it stopped. Timers that use the real clock
+// (birthdays, colds, medicine, jealousy, calming down, kittens) move forward by the paused time.
+function togglePause() {
+  if (laser) return;
+  if (!game.paused) {
+    stopAnimation();
+    game.paused = true;
+    game.pausedAt = Date.now();
+  } else {
+    const pausedFor = Date.now() - game.pausedAt;
+    const later = (time) => (time ? time + pausedFor : time);
+    for (const c of game.cats) {
+      c.lastBirthday = later(c.lastBirthday);
+      if (c.partyUntil > game.pausedAt) c.partyUntil += pausedFor;
+      c.sickSince = later(c.sickSince);
+      if (c.painReliefUntil > game.pausedAt) c.painReliefUntil += pausedFor;
+      c.lastAttention = later(c.lastAttention);
+      if (c.angryUntil > game.pausedAt) c.angryUntil += pausedFor;
+    }
+    for (const pair of Object.values(game.relations)) pair.lastKitten = later(pair.lastKitten);
+    game.paused = false;
+    game.pausedAt = 0;
+    for (const c of game.cats) {
+      if (c.activity === "angry" || c.activity === "scratching") withCat(c, scheduleCalmDown);
     }
   }
   saveState();
@@ -980,6 +1022,13 @@ function applyTexts() {
 
 function render() {
   applyTexts();
+  const pauseButton = $("pause-button");
+  pauseButton.textContent = game.paused ? "▶" : "⏸";
+  pauseButton.setAttribute("aria-label", t(game.paused ? "top.resume" : "top.pause"));
+  pauseButton.title = t(game.paused ? "top.resume" : "top.pause");
+  pauseButton.setAttribute("aria-pressed", String(game.paused));
+  $("paused-banner").hidden = !game.paused;
+  document.querySelector(".game").classList.toggle("paused", game.paused);
   const gameOver = cat.lives <= 0;
   $("playing-view").hidden = gameOver;
   $("game-over-view").hidden = !gameOver;
@@ -1221,7 +1270,7 @@ function stopAnimation() {
 
 function blinkLoop() {
   setTimeout(() => {
-    if (!motionReduced()) {
+    if (!motionReduced() && !game.paused) {
       showFrame("blink");
       setTimeout(() => showFrame("normal"), 160);
     }
@@ -1231,7 +1280,7 @@ function blinkLoop() {
 
 function tailLoop() {
   setTimeout(() => {
-    if (!motionReduced()) {
+    if (!motionReduced() && !game.paused) {
       [0, 300, 600, 900].forEach((delay, i) =>
         setTimeout(() => showFrame(i % 2 === 0 ? "tail" : "normal"), delay)
       );
@@ -1243,7 +1292,7 @@ function tailLoop() {
 // A sick cat sneezes now and then.
 function sneezeLoop() {
   setTimeout(() => {
-    if (cat.sick && !animation && !laser && chooseImage(getMoods().map((m) => m[0])) === "sick") {
+    if (cat.sick && !game.paused && !animation && !laser && chooseImage(getMoods().map((m) => m[0])) === "sick") {
       playAnimation("sneeze");
     }
     sneezeLoop();
@@ -1274,7 +1323,7 @@ function setLook(side) {
 }
 
 function flyVisitor() {
-  if (visitorFlying || laser || cat.lives <= 0 || document.hidden || motionReduced()) return;
+  if (visitorFlying || laser || game.paused || cat.lives <= 0 || document.hidden || motionReduced()) return;
   visitorFlying = true;
   const card = document.querySelector(".game");
   let sky = card.querySelector(".sky");
@@ -1342,7 +1391,7 @@ let laser = null; // the round being played right now
 let lastLaserCatches = 0; // catches in the round that just ended, for actions.laserDone
 
 function startLaserGame() {
-  if (laser || cat.lives <= 0) return;
+  if (laser || game.paused || cat.lives <= 0) return;
   if (cat.sick) {
     tooSick();
     render();
@@ -1653,6 +1702,7 @@ $("history-button").addEventListener("click", () => {
   $("history-button").setAttribute("aria-expanded", String(!list.hidden));
 });
 
+$("pause-button").addEventListener("click", togglePause);
 $("cat-button").addEventListener("click", openCatInfo);
 $("relations-button").addEventListener("click", openRelations);
 

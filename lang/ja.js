@@ -4,6 +4,9 @@ TEXTS.ja = {
   "page.title": "ねこゲーム",
 
   "top.reset": "このねこをリセット",
+  "top.pause": "一時停止",
+  "top.resume": "つづける",
+  "paused.banner": "⏸ 一時停止中――すべてのねこの時間が止まっています。▶ で再開。",
   "top.info": "ボタンの説明",
   "top.looks": "ねこの見た目",
   "top.settings": "設定",
@@ -147,6 +150,7 @@ TEXTS.ja = {
   "info.meow.term": "ニャー",
   "info.meow": "あいさつ。少ししあわせに。",
   "info.top": "上のボタン",
+  "info.pause": "ゲームを一時停止：もう一度押すまで、すべてのねこの時間が止まります。",
   "info.reset": "このねこの数値をリセット（先に確認します）。",
   "info.faces.term": "ねこの顔",
   "info.faces": "ねこを切りかえます。+ で新しいねこを作ります。選んでいるねこの顔をもう一度押すと削除できます。",

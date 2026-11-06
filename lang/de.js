@@ -3,6 +3,9 @@ TEXTS.de = {
   "page.title": "Katzenspiel",
 
   "top.reset": "Diese Katze zurücksetzen",
+  "top.pause": "Pause",
+  "top.resume": "Weiter",
+  "paused.banner": "⏸ Pausiert – die Zeit steht für alle Katzen still. Drück ▶, um weiterzuspielen.",
   "top.info": "Was die Knöpfe tun",
   "top.looks": "Aussehen der Katze",
   "top.settings": "Einstellungen",
@@ -146,6 +149,7 @@ TEXTS.de = {
   "info.meow.term": "Miau",
   "info.meow": "Sag hallo. Ein bisschen glücklicher.",
   "info.top": "Knöpfe oben",
+  "info.pause": "Spiel pausieren: Die Zeit steht für alle Katzen still, bis du wieder drückst.",
   "info.reset": "Werte dieser Katze zurücksetzen (es wird vorher gefragt).",
   "info.faces.term": "Katzengesichter",
   "info.faces": "Zwischen deinen Katzen wechseln; + macht eine neue. Klick noch einmal auf das Gesicht der gewählten Katze, um sie zu löschen.",

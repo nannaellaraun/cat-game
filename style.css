@@ -878,3 +878,31 @@ ul.relations li + li {
     margin-top: 12px;
   }
 }
+
+/* ---------- Pause ---------- */
+
+.top-bar-left {
+  display: flex;
+  gap: 2px;
+}
+#pause-button {
+  font-size: 20px;
+}
+.paused-banner {
+  margin: 4px 0 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--hover);
+  border: 1px dashed var(--soft-border);
+  color: var(--accent);
+  font-weight: 600;
+}
+/* While paused: the care buttons rest and the cat holds still */
+.game.paused .actions button,
+.game.paused #laser-button {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.game.paused #cat-image {
+  animation-play-state: paused;
+}

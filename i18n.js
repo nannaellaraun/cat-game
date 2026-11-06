@@ -28,6 +28,9 @@ TEXTS.en = {
 
   // Top bar and cat row
   "top.reset": "Reset this cat",
+  "top.pause": "Pause",
+  "top.resume": "Continue",
+  "paused.banner": "⏸ Paused – time stands still for all cats. Press ▶ to continue.",
   "top.info": "What the buttons do",
   "top.looks": "Cat's looks",
   "top.settings": "Settings",
@@ -177,6 +180,7 @@ TEXTS.en = {
   "info.meow.term": "Meow",
   "info.meow": "Say hi. A little happier.",
   "info.top": "Buttons at the top",
+  "info.pause": "Pause the game: time stands still for all cats until you press it again.",
   "info.reset": "Reset this cat's stats (it asks first).",
   "info.faces.term": "Cat faces",
   "info.faces": "Switch between your cats; + makes a new one. Click the chosen cat's face again to delete it.",

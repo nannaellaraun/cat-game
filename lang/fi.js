@@ -4,6 +4,9 @@ TEXTS.fi = {
   "page.title": "Kissapeli",
 
   "top.reset": "Nollaa tämä kissa",
+  "top.pause": "Tauko",
+  "top.resume": "Jatka",
+  "paused.banner": "⏸ Tauolla – aika on pysähtynyt kaikilta kissoilta. Jatka painamalla ▶.",
   "top.info": "Mitä napit tekevät",
   "top.looks": "Kissan ulkonäkö",
   "top.settings": "Asetukset",
@@ -147,6 +150,7 @@ TEXTS.fi = {
   "info.meow.term": "Miau",
   "info.meow": "Sano hei. Vähän iloisempi.",
   "info.top": "Napit ylhäällä",
+  "info.pause": "Pysäytä peli: aika seisoo kaikilta kissoilta, kunnes painat uudelleen.",
   "info.reset": "Nollaa kissan arvot (kysyy ensin).",
   "info.faces.term": "Kissojen kasvot",
   "info.faces": "Vaihda kissojen välillä; + tekee uuden. Napauta valitun kissan kasvoja uudelleen poistaaksesi sen.",

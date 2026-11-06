@@ -5,6 +5,9 @@ TEXTS.ko = {
   "page.title": "고양이 게임",
 
   "top.reset": "이 고양이 초기화",
+  "top.pause": "일시 정지",
+  "top.resume": "계속하기",
+  "paused.banner": "⏸ 일시 정지 중 – 모든 고양이의 시간이 멈췄어요. ▶를 누르면 계속돼요.",
   "top.info": "버튼 설명",
   "top.looks": "고양이 외모",
   "top.settings": "설정",
@@ -148,6 +151,7 @@ TEXTS.ko = {
   "info.meow.term": "야옹",
   "info.meow": "인사하기. 조금 더 행복해져요.",
   "info.top": "위쪽 버튼",
+  "info.pause": "게임 일시 정지: 다시 누를 때까지 모든 고양이의 시간이 멈춰요.",
   "info.reset": "이 고양이의 수치를 초기화해요 (먼저 물어봐요).",
   "info.faces.term": "고양이 얼굴",
   "info.faces": "고양이를 바꿔요. +로 새 고양이를 만들어요. 선택한 고양이 얼굴을 한 번 더 누르면 삭제할 수 있어요.",

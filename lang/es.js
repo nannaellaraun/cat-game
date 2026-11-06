@@ -3,6 +3,9 @@ TEXTS.es = {
   "page.title": "Juego del gato",
 
   "top.reset": "Reiniciar este gato",
+  "top.pause": "Pausa",
+  "top.resume": "Continuar",
+  "paused.banner": "⏸ En pausa: el tiempo se detiene para todos los gatos. Pulsa ▶ para continuar.",
   "top.info": "Qué hacen los botones",
   "top.looks": "Aspecto del gato",
   "top.settings": "Ajustes",
@@ -150,6 +153,7 @@ TEXTS.es = {
   "info.meow.term": "Miau",
   "info.meow": "Saluda. Un poco más feliz.",
   "info.top": "Botones de arriba",
+  "info.pause": "Pausa el juego: el tiempo se detiene para todos los gatos hasta que vuelvas a pulsar.",
   "info.reset": "Reinicia los valores del gato (pregunta antes).",
   "info.faces.term": "Caras de gato",
   "info.faces": "Cambia entre tus gatos; + crea uno nuevo. Pulsa otra vez la cara del gato elegido para borrarlo.",

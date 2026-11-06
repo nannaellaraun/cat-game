@@ -3,6 +3,9 @@ TEXTS.da = {
   "page.title": "Kattespil",
 
   "top.reset": "Nulstil denne kat",
+  "top.pause": "Pause",
+  "top.resume": "Fortsæt",
+  "paused.banner": "⏸ På pause – tiden står stille for alle katte. Tryk ▶ for at fortsætte.",
   "top.info": "Hvad knapperne gør",
   "top.looks": "Kattens udseende",
   "top.settings": "Indstillinger",
@@ -146,6 +149,7 @@ TEXTS.da = {
   "info.meow.term": "Miav",
   "info.meow": "Sig hej. Lidt gladere.",
   "info.top": "Knapperne øverst",
+  "info.pause": "Sæt spillet på pause: tiden står stille for alle katte, indtil du trykker igen.",
   "info.reset": "Nulstil kattens værdier (den spørger først).",
   "info.faces.term": "Katteansigter",
   "info.faces": "Skift mellem dine katte; + laver en ny. Klik på den valgte kats ansigt igen for at slette den.",

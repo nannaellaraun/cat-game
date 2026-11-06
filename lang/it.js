@@ -3,6 +3,9 @@ TEXTS.it = {
   "page.title": "Gioco del gatto",
 
   "top.reset": "Azzera questo gatto",
+  "top.pause": "Pausa",
+  "top.resume": "Continua",
+  "paused.banner": "⏸ In pausa: il tempo è fermo per tutti i gatti. Premi ▶ per continuare.",
   "top.info": "Cosa fanno i pulsanti",
   "top.looks": "Aspetto del gatto",
   "top.settings": "Impostazioni",
@@ -150,6 +153,7 @@ TEXTS.it = {
   "info.meow.term": "Miao",
   "info.meow": "Saluta. Un po' più felice.",
   "info.top": "Pulsanti in alto",
+  "info.pause": "Metti in pausa il gioco: il tempo si ferma per tutti i gatti finché non premi di nuovo.",
   "info.reset": "Azzera i valori del gatto (prima chiede conferma).",
   "info.faces.term": "Musetti",
   "info.faces": "Passa da un gatto all'altro; + ne crea uno nuovo. Tocca di nuovo il musetto del gatto scelto per eliminarlo.",

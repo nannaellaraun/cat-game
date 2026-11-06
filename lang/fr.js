@@ -3,6 +3,9 @@ TEXTS.fr = {
   "page.title": "Jeu du chat",
 
   "top.reset": "Réinitialiser ce chat",
+  "top.pause": "Pause",
+  "top.resume": "Continuer",
+  "paused.banner": "⏸ En pause : le temps s'arrête pour tous les chats. Appuie sur ▶ pour continuer.",
   "top.info": "À quoi servent les boutons",
   "top.looks": "Apparence du chat",
   "top.settings": "Réglages",
@@ -146,6 +149,7 @@ TEXTS.fr = {
   "info.meow.term": "Miaou",
   "info.meow": "Dis bonjour. Un peu plus content.",
   "info.top": "Boutons du haut",
+  "info.pause": "Mets le jeu en pause : le temps s'arrête pour tous les chats jusqu'à ce que tu appuies à nouveau.",
   "info.reset": "Réinitialise les valeurs du chat (il demande avant).",
   "info.faces.term": "Têtes de chat",
   "info.faces": "Passe d'un chat à l'autre ; + en crée un nouveau. Touche à nouveau la tête du chat choisi pour le supprimer.",
