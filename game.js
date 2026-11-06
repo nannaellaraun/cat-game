@@ -723,6 +723,23 @@ const needsAttention = (c) =>
   c.lives > 0 &&
   (c.hunger >= 80 || c.happiness <= 20 || c.energy <= 20 || c.cleanliness <= 20 || needsVet(c));
 
+// The lines under the name: family first (❤️ Mother: Mimi), then friends, couples and rivals.
+function relationLines(c) {
+  const lines = [];
+  for (const other of game.cats) {
+    if (other === c) continue;
+    const family = familyOf(c, other);
+    if (family) lines.push("❤️ " + t("family." + family, { name: other.name, gender: other.gender }));
+  }
+  for (const other of game.cats) {
+    const relation = other === c ? null : relationOf(c, other);
+    // Family are friends from the start; the ❤️ already says that, so plain "friends" is left out.
+    if (relation === "friends" && familyOf(c, other)) continue;
+    if (relation) lines.push(RELATIONS[relation].sign + " " + t("rel." + relation + ".with", { name: other.name }));
+  }
+  return lines;
+}
+
 // The row of little cat faces at the top of the card, plus a + to adopt another cat.
 function renderSwitcher() {
   const row = $("cat-switcher");
@@ -756,12 +773,13 @@ function renderSwitcher() {
     });
     button.append(face);
     const relation = c === cat ? null : relationOf(cat, c);
-    if (relation) {
+    const family = c === cat ? null : familyOf(cat, c);
+    if (family || relation) {
       const badge = document.createElement("span");
       badge.className = "relation-badge";
-      badge.textContent = RELATIONS[relation].sign;
+      badge.textContent = family ? "❤️" : RELATIONS[relation].sign;
       button.append(badge);
-      button.title = c.name + " – " + t("rel." + relation);
+      button.title = c.name + " – " + (family ? t("relations.family") : t("rel." + relation));
     }
     // A red ! on the other cats that are low on something (or need the vet).
     if (c !== cat && needsAttention(c)) {
@@ -997,10 +1015,19 @@ function render() {
     grey: cat.age >= OLD_AGE,
   };
   $("cat-image").classList.toggle("kitten", cat.age <= KITTEN_AGE);
-  $("relations").textContent = game.cats
-    .filter((c) => c !== cat && relationOf(cat, c))
-    .map((c) => RELATIONS[relationOf(cat, c)].sign + " " + t("rel." + relationOf(cat, c) + ".with", { name: c.name }))
-    .join(" · ");
+  // The cat's relationships sit behind a small "💕 Relationships (3)" button under the age.
+  const lines = relationLines(cat);
+  const list = $("relations");
+  list.replaceChildren(...lines.map((line) => Object.assign(document.createElement("li"), { textContent: line })));
+  const toggle = $("relations-toggle");
+  toggle.hidden = lines.length === 0;
+  if (lines.length === 0) list.hidden = true;
+  toggle.textContent = "💕 " + t("settings.relationships") + " (" + lines.length + ") " + (list.hidden ? "▾" : "▴");
+  toggle.setAttribute("aria-expanded", String(!list.hidden));
+  $("cat-icon").src = drawCat(cat.lives > 0 ? "face" : "gameOver", cat.color, cat.coat, cat.eyes, {
+    grey: cat.age >= OLD_AGE,
+  });
+  $("relations-button").hidden = game.cats.length < 2;
   const draw = (extra) => drawCat(sprite, cat.color, cat.coat, cat.eyes, { ...look, ...extra });
   catFrames = { normal: draw(), blink: draw({ blink: true }), tail: draw({ tail: true }) };
   catLook = look;
@@ -1067,8 +1094,19 @@ function relationOf(a, b) {
 }
 
 // Grown-ups only, and a cat's couple is its strongest bond (unless you chose someone else for it).
+// Family: "parent" when other is a parent of c, "child" when other is c's kitten,
+// "sibling" when they share a parent. Family is shown with a red ❤️ and can't be a couple.
+function familyOf(c, other) {
+  const parentsOf = (x) => (Array.isArray(x.parents) ? x.parents : []);
+  if (parentsOf(c).includes(other.id)) return "parent";
+  if (parentsOf(other).includes(c.id)) return "child";
+  if (c !== other && parentsOf(c).some((id) => parentsOf(other).includes(id))) return "sibling";
+  return null;
+}
+
 function canBecomeCouple(a, b, bond) {
   if (a.age < ADULT_AGE || b.age < ADULT_AGE) return false;
+  if (familyOf(a, b)) return false;
   for (const c of [a, b]) {
     for (const other of game.cats) {
       if (other === a || other === b) continue;
@@ -1441,11 +1479,37 @@ function labelDropdowns() {
 labelDropdowns();
 
 // Show the cat's current settings in the form.
-function fillSettingsForm() {
+// The colored cat head: name, age, gender and personality of the cat you're looking at.
+function openCatInfo() {
+  if (laser) return;
   nameInput.value = cat.name;
   ageInput.value = cat.age;
   genderInput.value = cat.gender in PRONOUNS ? cat.gender : "none";
   personalityInput.value = cat.personality in PERSONALITIES ? cat.personality : "default";
+  $("catinfo-error").textContent = "";
+  $("catinfo-dialog").showModal();
+}
+
+// 💕 Relationships: the family, and a dropdown per other cat.
+function openRelations() {
+  if (laser || game.cats.length < 2) return;
+  const family = $("family-list");
+  family.replaceChildren();
+  for (const other of game.cats) {
+    const kind = other === cat ? null : familyOf(cat, other);
+    if (!kind) continue;
+    const item = document.createElement("li");
+    item.textContent = "❤️ " + t("family." + kind, { name: other.name, gender: other.gender });
+    family.append(item);
+  }
+  $("family-heading").hidden = family.children.length === 0;
+  fillRelationSettings();
+  $("relations-error").textContent = "";
+  $("relations-dialog").showModal();
+}
+
+// ⚙️ Game settings for all cats.
+function fillSettingsForm() {
   flashInput.checked = game.flash !== false;
   illnessInput.checked = game.illness !== false;
   textSizeInput.value = game.textSize;
@@ -1455,7 +1519,6 @@ function fillSettingsForm() {
   contrastInput.value = game.contrast;
   motionInput.checked = game.reduceMotion;
   soundInput.checked = game.sound;
-  fillRelationSettings();
 }
 
 // One dropdown per other cat: let the relationship grow by itself, or choose it.
@@ -1463,7 +1526,6 @@ function fillRelationSettings() {
   const box = $("relation-settings");
   box.replaceChildren();
   const others = game.cats.filter((c) => c !== cat);
-  $("relations-heading").hidden = others.length === 0;
   for (const other of others) {
     const row = document.createElement("div");
     row.className = "setting";
@@ -1493,6 +1555,7 @@ function saveRelationSettings(newAge) {
   if (couples.length === 1 && (newAge < ADULT_AGE || couples[0].other.age < ADULT_AGE)) {
     return t("err.kittenCouple", { age: ADULT_AGE });
   }
+  if (couples.length === 1 && familyOf(cat, couples[0].other)) return t("err.familyCouple");
   for (const { other, chosen } of choices) {
     if (chosen === "couple") {
       // Both cats leave any other couple they were chosen into.
@@ -1526,6 +1589,7 @@ document.querySelectorAll(".dialog-close").forEach((button) => {
 // ℹ️ How to play
 $("info-button").addEventListener("click", () => $("info-dialog").showModal());
 $("info-tree-icon").src = drawTreeIcon();
+$("info-cat-icon").src = drawCat("face", "orange", "solid", "black");
 
 // ↺ Reset this cat, after "Are you sure?"
 $("reset-button").addEventListener("click", async () => {
@@ -1575,6 +1639,12 @@ $("looks-form").addEventListener("submit", (event) => {
   looksDialog.close();
 });
 
+// 💕 Relationships list under the age
+$("relations-toggle").addEventListener("click", () => {
+  $("relations").hidden = !$("relations").hidden;
+  render();
+});
+
 // 🕘 Earlier messages
 $("history-button").addEventListener("click", () => {
   const list = $("history");
@@ -1582,43 +1652,60 @@ $("history-button").addEventListener("click", () => {
   $("history-button").setAttribute("aria-expanded", String(!list.hidden));
 });
 
-$("settings-form").addEventListener("submit", (event) => {
+$("cat-button").addEventListener("click", openCatInfo);
+$("relations-button").addEventListener("click", openRelations);
+
+$("catinfo-form").addEventListener("submit", (event) => {
   event.preventDefault(); // stay on the page instead of reloading it
   const newName = nameInput.value.trim();
   const newAge = Number(ageInput.value);
-
-  if (newName !== "" && Number.isInteger(newAge) && newAge >= 0 && newAge <= 30) {
-    // Checked first, so nothing is saved when a relationship choice isn't allowed.
-    const relationError = saveRelationSettings(newAge);
-    if (relationError) {
-      settingsError.textContent = relationError;
-      return;
-    }
-    cat.name = newName;
-    cat.age = newAge;
-    cat.gender = genderInput.value in PRONOUNS ? genderInput.value : "none";
-    cat.personality = personalityInput.value in PERSONALITIES ? personalityInput.value : "default";
-    game.flash = flashInput.checked;
-    game.illness = illnessInput.checked;
-    if (!game.illness) game.cats.forEach((c) => (c.sick = false)); // switching illness off cures colds
-    game.textSize = TEXT_SIZES.includes(textSizeInput.value) ? textSizeInput.value : "normal";
-    game.font = FONTS.includes($("font-input").value) ? $("font-input").value : "pixel";
-    game.shortTexts = $("short-input").checked;
-    shortTexts = game.shortTexts;
-    game.contrast = CONTRASTS.includes(contrastInput.value) ? contrastInput.value : "normal";
-    game.reduceMotion = motionInput.checked;
-    game.sound = soundInput.checked;
-    applyDisplaySettings();
-    game.language = LANGUAGES[languageInput.value] ? languageInput.value : "en";
-    language = game.language;
-    labelDropdowns();
-    say("msg.settingsSaved");
-    saveState();
-    render();
-    settingsDialog.close();
-  } else {
-    settingsError.textContent = t("err.nameAge");
+  if (newName === "" || !Number.isInteger(newAge) || newAge < 0 || newAge > 30) {
+    $("catinfo-error").textContent = t("err.nameAge");
+    return;
   }
+  cat.name = newName;
+  cat.age = newAge;
+  cat.gender = genderInput.value in PRONOUNS ? genderInput.value : "none";
+  cat.personality = personalityInput.value in PERSONALITIES ? personalityInput.value : "default";
+  say("msg.settingsSaved");
+  saveState();
+  render();
+  $("catinfo-dialog").close();
+});
+
+$("relations-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const relationError = saveRelationSettings(cat.age);
+  if (relationError) {
+    $("relations-error").textContent = relationError;
+    return;
+  }
+  say("msg.settingsSaved");
+  saveState();
+  render();
+  $("relations-dialog").close();
+});
+
+$("settings-form").addEventListener("submit", (event) => {
+  event.preventDefault(); // stay on the page instead of reloading it
+  game.flash = flashInput.checked;
+  game.illness = illnessInput.checked;
+  if (!game.illness) game.cats.forEach((c) => (c.sick = false)); // switching illness off cures colds
+  game.textSize = TEXT_SIZES.includes(textSizeInput.value) ? textSizeInput.value : "normal";
+  game.font = FONTS.includes($("font-input").value) ? $("font-input").value : "pixel";
+  game.shortTexts = $("short-input").checked;
+  shortTexts = game.shortTexts;
+  game.contrast = CONTRASTS.includes(contrastInput.value) ? contrastInput.value : "normal";
+  game.reduceMotion = motionInput.checked;
+  game.sound = soundInput.checked;
+  applyDisplaySettings();
+  game.language = LANGUAGES[languageInput.value] ? languageInput.value : "en";
+  language = game.language;
+  labelDropdowns();
+  say("msg.settingsSaved");
+  saveState();
+  render();
+  settingsDialog.close();
 });
 
 // ---------- Time passing ----------

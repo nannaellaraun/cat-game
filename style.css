@@ -786,3 +786,59 @@ button:focus-visible {
   line-height: 16px;
   text-align: center;
 }
+
+/* Colored cat head (name, age, gender, personality) and 💕 relationships */
+#cat-icon {
+  width: 26px;
+  height: 26px;
+  vertical-align: middle;
+  image-rendering: pixelated;
+}
+#relations-button {
+  font-size: 18px;
+}
+#relations-button[hidden] {
+  display: none;
+}
+.form-error:empty {
+  display: none;
+}
+.family-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+  color: var(--accent);
+}
+.family-list li + li {
+  margin-top: 4px;
+}
+
+/* 💕 Relationships button under the age, and its list */
+.relations-toggle {
+  margin: 4px 0;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--soft-border);
+  border-radius: 999px;
+}
+.relations-toggle:hover,
+.relations-toggle[aria-expanded="true"] {
+  background: var(--hover);
+}
+.relations-toggle[hidden] {
+  display: none;
+}
+ul.relations {
+  list-style: none;
+  margin: 4px auto 8px;
+  padding: 8px 12px;
+  max-width: 300px;
+  border: 1px solid var(--soft-border);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+ul.relations li + li {
+  margin-top: 3px;
+}
