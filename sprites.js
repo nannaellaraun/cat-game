@@ -377,7 +377,7 @@ const EYE_HUES = {
   darkBrown: "#5a3418",
   brown: "#8a5a2b",
   lightBrown: "#c0915a",
-  black: "#1e1a1a",
+  black: "#34343a", // very dark grey, so the black pupil still shows
   grey: "#8c8c96",
   lightPink: "#f5b8c8",
   darkGreen: "#2f7a32",
@@ -388,7 +388,7 @@ const EYE_HUES = {
 };
 
 const CAT_EYES = {
-  black: { label: "Black", left: EYE_HUES.black, right: EYE_HUES.black },
+  black: { label: "Black", left: EYE_HUES.black, right: EYE_HUES.black, pupil: "#000000" },
   darkBlue: { label: "Dark blue", left: EYE_HUES.darkBlue, right: EYE_HUES.darkBlue },
   blue: { label: "Blue", left: EYE_HUES.blue, right: EYE_HUES.blue },
   lightBlue: { label: "Light blue", left: EYE_HUES.lightBlue, right: EYE_HUES.lightBlue },
