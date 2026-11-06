@@ -835,3 +835,46 @@ ul.relations {
 ul.relations li + li {
   margin-top: 3px;
 }
+
+/* ---------- Bigger screens ---------- */
+
+/* iPad held upright, big phones turned sideways: a wider card and a bigger cat */
+@media (min-width: 640px) {
+  .game {
+    max-width: 600px;
+    padding: 20px 40px 36px;
+  }
+  #cat-pictures {
+    zoom: 1.3;
+  }
+  .actions button {
+    padding: 13px 16px;
+  }
+}
+
+/* Computer and iPad held sideways: two columns – info on the left, the cat and buttons on the right */
+@media (min-width: 960px) {
+  body {
+    padding: 32px 24px;
+  }
+  .game {
+    max-width: 960px;
+  }
+  #playing-view:not([hidden]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 40px;
+    align-items: start;
+  }
+  .play-side {
+    position: sticky; /* the cat stays in view if the info side gets long */
+    top: 16px;
+    padding-top: 24px;
+  }
+  #cat-pictures {
+    zoom: 1.6;
+  }
+  .play-side .actions {
+    margin-top: 12px;
+  }
+}
