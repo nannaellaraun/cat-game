@@ -224,7 +224,8 @@ if (!TEXT_SIZES.includes(game.textSize)) game.textSize = "normal";
 if (!CONTRASTS.includes(game.contrast)) game.contrast = "normal";
 game.reduceMotion = game.reduceMotion === true;
 game.sound = game.sound !== false; // sound is on unless switched off in settings
-const FONTS = ["pixel", "atkinson", "lexend"];
+const FONTS = ["pixel", "lexend"];
+if (game.font === "atkinson") game.font = "lexend"; // that font was removed; keep an easy-to-read one
 if (!FONTS.includes(game.font)) game.font = "pixel";
 game.shortTexts = game.shortTexts === true;
 shortTexts = game.shortTexts; // used by messageText in i18n.js

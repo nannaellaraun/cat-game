@@ -726,30 +726,21 @@ button:focus-visible {
   color: var(--accent);
 }
 
-/* ---------- Easy-to-read fonts (setting) ---------- */
+/* ---------- Easy-to-read font (setting) ---------- */
 
-:root[data-font="atkinson"] body,
 :root[data-font="lexend"] body {
+  font-family: "Lexend", system-ui, sans-serif;
   -webkit-font-smoothing: auto;
   letter-spacing: 0.03em;
   word-spacing: 0.12em;
   line-height: 1.5;
 }
-:root[data-font="atkinson"] body {
-  font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
-}
-:root[data-font="lexend"] body {
-  font-family: "Lexend", system-ui, sans-serif;
-}
 /* Normal letters instead of capitals, and longer texts start at the left */
-:root[data-font="atkinson"] .action-group h4,
 :root[data-font="lexend"] .action-group h4 {
   text-transform: none;
   letter-spacing: 0.03em;
 }
-:root[data-font="atkinson"] .info > p,
 :root[data-font="lexend"] .info > p,
-:root[data-font="atkinson"] .family-empty,
 :root[data-font="lexend"] .family-empty {
   text-align: left;
 }
